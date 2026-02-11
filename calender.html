@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Date Time Picker</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        padding: 50px;
+        background-color: #f4f6f8;
+      }
+
+      /* Multi Input Styling */
+      .multi-input-container {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        width: 300px;
+        cursor: pointer;
+        background: white;
+        transition: border-color 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .multi-input-container:hover {
+        border-color: #b0b0b0;
+      }
+      .multi-input-container.active-input {
+        border-color: #3b82f6;
+      }
+
+      .multi-input-field {
+        border: none;
+        outline: none;
+        width: 100%;
+        background: transparent;
+        cursor: pointer;
+        font-family: "Inter", sans-serif;
+        color: #374151;
+        pointer-events: none; /* Let clicks pass to container */
+      }
+
+      .date-input {
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 2px;
+      }
+
+      .time-input {
+        font-size: 13px;
+        color: #6b7280;
+      }
+
+      /* Calendar Widget Container */
+      .calendar-widget {
+        position: absolute;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        display: none;
+        z-index: 1000;
+        user-select: none;
+        width: 850px;
+        max-width: 95vw;
+        top: 100%; /* Default */
+        left: 0;
+        overflow: hidden;
+      }
+
+      .calendar-widget.active {
+        display: flex;
+      }
+
+      .calendar-main {
+        display: flex;
+        width: 100%;
+      }
+
+      /* Months Section */
+      .months-container {
+        display: flex;
+        flex: 2;
+        border-right: 1px solid #e5e7eb;
+      }
+
+      .month-view {
+        flex: 1;
+        padding: 20px;
+      }
+
+      .month-view:first-child {
+        border-right: 1px solid #f3f4f6;
+      }
+
+      .month-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        font-weight: 700;
+        color: #1f2937;
+        text-transform: uppercase;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+      }
+
+      .nav-btn {
+        cursor: pointer;
+        color: #9ca3af;
+        font-size: 18px;
+        padding: 5px 10px;
+        border-radius: 4px;
+      }
+      .nav-btn:hover {
+        background-color: #f3f4f6;
+        color: #374151;
+      }
+
+      .weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        margin-bottom: 12px;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: #6b7280;
+      }
+
+      .days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        row-gap: 8px;
+      }
+
+      .day {
+        text-align: center;
+        padding: 8px 4px;
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 4px;
+        color: #374151;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .day:hover:not(.empty):not(.selected) {
+        background-color: #f3f4f6;
+      }
+
+      .day.selected {
+        background-color: #4b5563;
+        color: white;
+      }
+
+      .day.empty {
+        cursor: default;
+      }
+
+      .day .price-tag {
+        font-size: 9px;
+        font-weight: 500;
+        color: #10b981; /* Green */
+        margin-top: 2px;
+      }
+
+      .day.selected .price-tag {
+        color: #a7f3d0;
+      }
+
+      /* Time Section */
+      .time-view {
+        flex: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        background-color: #fff;
+        max-width: 280px;
+      }
+
+      .time-header {
+        text-align: center;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 14px;
+        margin-bottom: 20px;
+        color: #1f2937;
+      }
+
+      .time-controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        align-items: center;
+      }
+
+      .time-display {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f9fafb;
+      }
+
+      .ampm-toggle {
+        display: flex;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      .ampm-btn {
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        background: #fff;
+        color: #6b7280;
+        transition: all 0.2s;
+      }
+
+      .ampm-btn.active {
+        background: #4b5563; /* Dark gray active */
+        color: white;
+      }
+
+      .time-list-container {
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 20px;
+        padding-right: 5px;
+        max-height: 250px; /* Force scroll */
+        border-top: 1px solid #f3f4f6;
+      }
+
+      /* Custom Scrollbar */
+      .time-list-container::-webkit-scrollbar {
+        width: 4px;
+      }
+      .time-list-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .time-list-container::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 4px;
+      }
+
+      .time-option {
+        padding: 10px 12px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #374151;
+        border-radius: 4px;
+        transition: background 0.1s;
+      }
+
+      .time-option:hover {
+        background-color: #f3f4f6;
+      }
+
+      .time-option.selected {
+        background-color: #e5e7eb;
+        font-weight: 600;
+        border-left: 3px solid #4b5563;
+      }
+
+      .confirm-btn {
+        align-self: flex-end;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 1px solid #e5e7eb;
+        background: white;
+        color: #374151;
+        font-size: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        margin-top: auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+
+      .confirm-btn:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        transform: translateX(2px);
+      }
+
+      /* Responsive */
+      @media (max-width: 900px) {
+        .calendar-widget {
+          width: 320px;
+          flex-direction: column;
+        }
+        .months-container {
+          flex-direction: column;
+          border-right: none;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .month-view:first-child {
+          border-right: none;
+          border-bottom: 1px solid #f3f4f6;
+        }
+        .time-view {
+          width: 100%;
+          max-width: none;
+          border-top: 1px solid #e5e7eb;
+          height: 300px; /* Fixed height for time section on mobile */
+        }
+      }
+
+      /* Wrapper for relative positioning */
+      .input-wrapper {
+        position: relative;
+      }
+
+      .page-title {
+        color: #374151;
+        text-align: center;
+      }
+
+      .date-picker-wrapper {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .input-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 5px;
+        display: block;
+      }
+
+      .month-spacer {
+        width: 20px;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <h2 class="page-title">Flight Date & Time Picker</h2>
+
+    <div class="date-picker-wrapper">
+      <div class="input-wrapper">
+        <label class="input-label">DEPARTURE</label>
+        <div class="multi-input-container" id="departure-input">
+          <input
+            type="text"
+            class="multi-input-field date-input"
+            placeholder="Departure Date"
+            readonly
+          />
+          <input
+            type="text"
+            class="multi-input-field time-input"
+            placeholder="Departure Time"
+            readonly
+          />
+        </div>
+      </div>
+
+      <div class="input-wrapper">
+        <label class="input-label">RETURN</label>
+        <div class="multi-input-container" id="return-input">
+          <input
+            type="text"
+            class="multi-input-field date-input"
+            placeholder="Return Date"
+            readonly
+          />
+          <input
+            type="text"
+            class="multi-input-field time-input"
+            placeholder="Return Time"
+            readonly
+          />
+        </div>
+      </div>
+      <!-- The Reusable Calendar Widget is now outside any specific wrapper initially. We will move it in JS or keep it global and use fixed logic if CSS only. 
+       Wait, the user wants CSS positioning. That implies specific widgets per input OR moving the DOM node. 
+       A single widget instance for multiple inputs requires either absolute positioning by JS (what we had) OR moving the DOM node into the relative parent on click.
+       Let's keep the JS moving logic simple or better yet, just move the widget into the parent container on click.
+       Actually, if we want PURE CSS positioning, we'd traditionally need the markup to be nested. 
+       But since we have one widget sharing usage, we MUST manipulate DOM or position.
+       
+       However, the user asked "why in JS, can we do in CSS?".
+       To do it in CSS with One Widget, we can move the widget into the `.input-wrapper` of the active input.
+       -->
+      <div id="calendar-widget" class="calendar-widget">
+        <div class="calendar-main">
+          <div class="months-container">
+            <!-- Left Month -->
+            <div class="month-view" id="month-left">
+              <div class="month-header">
+                <span class="nav-btn prev-month" title="Previous Month"
+                  >&lt;</span
+                >
+                <span class="month-label">JULY 2025</span>
+                <span class="month-spacer"></span>
+                <!-- Spacer -->
+              </div>
+              <div class="weekdays">
+                <div>SUN</div>
+                <div>MON</div>
+                <div>TUE</div>
+                <div>WED</div>
+                <div>THU</div>
+                <div>FRI</div>
+                <div>SAT</div>
+              </div>
+              <div class="days" id="days-left"></div>
+            </div>
+            <!-- Right Month -->
+            <div class="month-view" id="month-right">
+              <div class="month-header">
+                <span class="month-spacer"></span>
+                <!-- Spacer -->
+                <span class="month-label">AUGUST 2025</span>
+                <span class="nav-btn next-month" title="Next Month">&gt;</span>
+              </div>
+              <div class="weekdays">
+                <div>SUN</div>
+                <div>MON</div>
+                <div>TUE</div>
+                <div>WED</div>
+                <div>THU</div>
+                <div>FRI</div>
+                <div>SAT</div>
+              </div>
+              <div class="days" id="days-right"></div>
+            </div>
+          </div>
+
+          <div class="time-view">
+            <div class="time-header">TIME</div>
+            <div class="time-controls">
+              <div class="time-display" id="selected-time-display">12:00</div>
+              <div class="ampm-toggle">
+                <span class="ampm-btn active" data-val="AM">AM</span>
+                <span class="ampm-btn" data-val="PM">PM</span>
+              </div>
+            </div>
+
+            <div class="time-list-container" id="time-list">
+              <!-- Times generated by JS -->
+            </div>
+
+            <button
+              class="confirm-btn"
+              id="confirm-selection"
+              title="Confirm Selection"
+            >
+              &rarr;
+              <!-- Arrow Icon -->
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const widget = document.getElementById("calendar-widget");
+        const inputs = document.querySelectorAll(".multi-input-container");
+        const leftMonthLabel = document.querySelector(
+          "#month-left .month-label",
+        );
+        const rightMonthLabel = document.querySelector(
+          "#month-right .month-label",
+        );
+        const leftDaysContainer = document.getElementById("days-left");
+        const rightDaysContainer = document.getElementById("days-right");
+        const prevBtn = document.querySelector(".prev-month");
+        const nextBtn = document.querySelector(".next-month");
+        const amPmBtns = document.querySelectorAll(".ampm-btn");
+        const timeList = document.getElementById("time-list");
+        const confirmBtn = document.getElementById("confirm-selection");
+        const timeDisplay = document.getElementById("selected-time-display");
+
+        let currentInput = null;
+        let viewingDate = new Date(); // The date determining the left month
+        // viewingDate.setDate(1); // Ensure we start at the 1st
+
+        let selectedDate = null;
+        let selectedHour = "12";
+        let selectedMinute = "00";
+        let selectedAmPm = "AM";
+
+        const monthNames = [
+          "JANUARY",
+          "FEBRUARY",
+          "MARCH",
+          "APRIL",
+          "MAY",
+          "JUNE",
+          "JULY",
+          "AUGUST",
+          "SEPTEMBER",
+          "OCTOBER",
+          "NOVEMBER",
+          "DECEMBER",
+        ];
+
+        // --- Time List Generation ---
+        function generateTimeList() {
+          timeList.innerHTML = "";
+          const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+          hours.forEach((h) => {
+            ["00", "30"].forEach((m) => {
+              const timeStr = `${String(h).padStart(2, "0")}:${m}`;
+              const div = document.createElement("div");
+              div.className = "time-option";
+              div.textContent = timeStr;
+
+              // Check Selection
+              if (timeStr === `${selectedHour}:${selectedMinute}`) {
+                div.classList.add("selected");
+              }
+
+              div.onclick = (e) => {
+                e.stopPropagation();
+                selectedHour = String(h).padStart(2, "0");
+                selectedMinute = m;
+                updateTimeUI();
+              };
+
+              timeList.appendChild(div);
+            });
+          });
+        }
+
+        function updateTimeUI() {
+          // Update text display
+          timeDisplay.textContent = `${selectedHour}:${selectedMinute}`;
+          // Re-render list to show active state
+          generateTimeList();
+          // Scroll selected into view
+          setTimeout(() => {
+            const selected = timeList.querySelector(".selected");
+            if (selected) {
+              // selected.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 0);
+        }
+
+        // --- Calendar Rendering ---
+        function renderCalendar() {
+          // Always render starting from viewingDate
+          renderMonth(viewingDate, leftMonthLabel, leftDaysContainer);
+
+          const nextMonthDate = new Date(viewingDate);
+          nextMonthDate.setMonth(viewingDate.getMonth() + 1);
+          renderMonth(nextMonthDate, rightMonthLabel, rightDaysContainer);
+        }
+
+        function renderMonth(date, labelEl, daysEl) {
+          const year = date.getFullYear();
+          const month = date.getMonth();
+
+          labelEl.textContent = `${monthNames[month]} ${year}`;
+          daysEl.innerHTML = "";
+
+          const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Sunday
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+          // Empty slots for previous month
+          for (let i = 0; i < firstDayIndex; i++) {
+            const empty = document.createElement("div");
+            empty.className = "day empty";
+            daysEl.appendChild(empty);
+          }
+
+          // Days
+          for (let i = 1; i <= daysInMonth; i++) {
+            const dayEl = document.createElement("div");
+            dayEl.className = "day";
+            dayEl.innerHTML = `${i} <span class="price-tag">$120k</span>`; // Mock Data
+
+            // Selection Logic
+            if (
+              selectedDate &&
+              selectedDate.getDate() === i &&
+              selectedDate.getMonth() === month &&
+              selectedDate.getFullYear() === year
+            ) {
+              dayEl.classList.add("selected");
+            }
+
+            dayEl.onclick = (e) => {
+              e.stopPropagation();
+              selectedDate = new Date(year, month, i);
+              renderCalendar();
+            };
+
+            daysEl.appendChild(dayEl);
+          }
+        }
+
+        // --- Handlers ---
+        prevBtn.onclick = (e) => {
+          e.stopPropagation();
+          viewingDate.setMonth(viewingDate.getMonth() - 1);
+          renderCalendar();
+        };
+        nextBtn.onclick = (e) => {
+          e.stopPropagation();
+          viewingDate.setMonth(viewingDate.getMonth() + 1);
+          renderCalendar();
+        };
+
+        amPmBtns.forEach((btn) => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            amPmBtns.forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            selectedAmPm = btn.dataset.val;
+          };
+        });
+
+        // Input Click -> Open Widget
+        inputs.forEach((input) => {
+          input.addEventListener("click", (e) => {
+            e.stopPropagation();
+
+            // If clicking specific input, move widget there
+            currentInput = input;
+
+            // Move widget into the wrapper of the clicked input
+            // The structure is input-wrapper > label, multi-input-container
+            // We want widget to be sibling of multi-input-container roughly, or child of input-wrapper
+            const wrapper = input.closest(".input-wrapper");
+            if (wrapper) {
+              wrapper.appendChild(widget);
+
+              // Reset CSS top/left to rely on CSS
+              widget.style.top = "";
+              widget.style.left = "";
+            }
+
+            // Remove active class from others
+            inputs.forEach((i) => i.classList.remove("active-input"));
+            input.classList.add("active-input");
+
+            // Load state from input if exists
+            if (input.dataset.selectedDate) {
+              selectedDate = new Date(input.dataset.selectedDate);
+              viewingDate = new Date(selectedDate); // Jump to that month
+              selectedHour = input.dataset.selectedHour;
+              selectedMinute = input.dataset.selectedMinute;
+              selectedAmPm = input.dataset.selectedAmPm;
+            } else {
+              // Reset to defaults if new input
+              selectedDate = null;
+              viewingDate = new Date();
+              selectedHour = "12";
+              selectedMinute = "00";
+              selectedAmPm = "AM";
+            }
+
+            // Refresh UI with loaded/reset state
+            updateTimeUI();
+            amPmBtns.forEach((btn) => {
+              if (btn.dataset.val === selectedAmPm) btn.classList.add("active");
+              else btn.classList.remove("active");
+            });
+            renderCalendar();
+
+            widget.classList.add("active");
+          });
+        });
+
+        // Close Logic
+        // Close Logic
+        document.addEventListener("click", (e) => {
+          if (widget.classList.contains("active")) {
+            if (
+              !widget.contains(e.target) &&
+              !Array.from(inputs).includes(e.target)
+            ) {
+              widget.classList.remove("active");
+              inputs.forEach((i) => i.classList.remove("active-input"));
+            }
+          }
+        });
+
+        // Confirm Button Logic
+        confirmBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (selectedDate) {
+            const dateStr = selectedDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            });
+
+            const timeStr = `${selectedHour}:${selectedMinute} ${selectedAmPm}`;
+
+            if (currentInput) {
+              const dateField = currentInput.querySelector(".date-input");
+              const timeField = currentInput.querySelector(".time-input");
+
+              if (dateField) dateField.value = dateStr;
+              if (timeField) timeField.value = timeStr;
+
+              // Save state to dataset
+              currentInput.dataset.selectedDate = selectedDate.toISOString();
+              currentInput.dataset.selectedHour = selectedHour;
+              currentInput.dataset.selectedMinute = selectedMinute;
+              currentInput.dataset.selectedAmPm = selectedAmPm;
+            }
+
+            widget.classList.remove("active");
+            if (currentInput) currentInput.classList.remove("active-input");
+          } else {
+            alert("Please select a date.");
+          }
+        };
+
+        // Init
+        generateTimeList();
+        renderCalendar();
+      });
+    </script>
+  </body>
+</html>
