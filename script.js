@@ -746,6 +746,28 @@ document.addEventListener("DOMContentLoaded", () => {
            else console.error("Please select a return date.");
           return;
       }
+
+       // Validation for Round Trip Time Conflict
+       if (isRoundTrip && selectedDateDep && selectedDateRet) {
+            const isSameDay = selectedDateDep.getFullYear() === selectedDateRet.getFullYear() &&
+                              selectedDateDep.getMonth() === selectedDateRet.getMonth() &&
+                              selectedDateDep.getDate() === selectedDateRet.getDate();
+            
+            if (isSameDay) {
+                const getMins = (t) => {
+                    let h = parseInt(t.h);
+                    if (t.ampm === "PM" && h !== 12) h += 12;
+                    if (t.ampm === "AM" && h === 12) h = 0;
+                    return h * 60 + parseInt(t.m);
+                };
+                
+                if (getMins(timeRet) <= getMins(timeDep)) {
+                     if(window.toast && window.toast.error) window.toast.error("Return time must be after departure time.");
+                     else console.error("Return time must be after departure time.");
+                     return; // STOP here, do not close widget
+                }
+            }
+       }
       
       updateRealTimeUI();
       closeWidget();
