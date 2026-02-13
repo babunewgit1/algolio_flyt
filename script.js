@@ -253,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
    ];
 
-   function updateRealTimeUI() {
+   function updateRealTimeUI(showErrorToast = false) {
       if (!currentInput) return;
       
       const formatTime = (t) => `${t.h}:${t.m} ${t.ampm}`;
@@ -295,14 +295,15 @@ document.addEventListener("DOMContentLoaded", () => {
                                     selectedDateDep.getDate() === selectedDateRet.getDate();
                                     
                   if (isSameDay && getMinutes(timeRet) <= getMinutes(timeDep)) {
-                      // Invalid Time State: Show Error using Toast
-                      if(window.toast && window.toast.error) {
+                      // Invalid Time State: Show Error using Toast ONLY if user is interacting with Time
+                      if(showErrorToast && window.toast && window.toast.error) {
                           window.toast.error("Return time must be after departure time.");
-                      } else {
+                      } else if (showErrorToast) {
                           console.error("Return time must be after departure time.");
                       }
                       
                       if (retTimeEl) {
+                          // Clear the time display to indicate invalid selection
                           retTimeEl.textContent = ""; 
                       }
                   } else {
@@ -433,7 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
                targetTime.m = m;
                
                updateTimeControls();
-               updateRealTimeUI(); // Update DOM immediately
+               updateRealTimeUI(true); // Update DOM immediately
                if(timeList) timeList.classList.remove("show"); 
             };
             timeList.appendChild(div);
@@ -590,7 +591,7 @@ document.addEventListener("DOMContentLoaded", () => {
                e.stopPropagation();
                timeObj.ampm = btn.dataset.val;
                updateTimeControls();
-               updateRealTimeUI();
+               updateRealTimeUI(true);
            }
        });
    }
