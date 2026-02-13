@@ -44,7 +44,6 @@ const handleInput = debounce(function (event) {
       .then(({
          hits
       }) => {
-         // console.log("Algolia Search Results:", hits);
          if (hits.length > 0) {
             resultsContainer.innerHTML = hits
                .map(
@@ -240,8 +239,6 @@ document.addEventListener("DOMContentLoaded", () => {
    
    // State
    let isRoundTrip = false;
-   // We separate logical state for Departure vs Return
-   // For One-Way, we use 'dep' values.
    let selectedDateDep = null;
    let selectedDateRet = null;
    
@@ -249,7 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
    let timeDep = { h: "12", m: "00", ampm: "AM" };
    let timeRet = { h: "12", m: "00", ampm: "AM" };
    
-   // Which time picker is currently open? 'dep' or 'ret'
    let activeTimeTarget = 'dep'; 
 
    const monthNames = [
@@ -272,51 +268,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (isRoundTrip) {
-          // Check for Same Date Time Conflict
-          if (selectedDateDep && selectedDateRet && 
-              selectedDateDep.getTime() === selectedDateRet.getTime()) {
-              
-              const depMins = getMinutes(timeDep);
-              const retMins = getMinutes(timeRet);
-              
-              if (retMins <= depMins) {
-                  // Conflict: Return is before or equal to Departure
-                  // Force Return to be later? Or just visual error?
-                  // Let's simply push Return ahead by 1 hour (wrapped) or reset
-                  // For better UX during selection, we might just warn, 
-                  // but user request says "Return time/date must be > than outbound"
-                  
-                  // Simple Fix: prevent UI update or show error?
-                  // Better: Auto-adjust return to be at least 1 hr after?
-                  // Or let's just clear the return time visually/logically if invalid?
-                  // No, that's annoying. Let's just not update the dataset if invalid?
-                  
-                  // Actually, let's enforce it by auto-adjusting valid logic
-                  // However, modifying state here might be tricky with loop.
-                  
-                  // Let's just visually flag or reset if it's strictly enforced.
-                  // User says "Return time/date must be >".
-                  
-                  // If conflict, set valid time? 
-                  // Let's just ensure we don't save/display an invalid state effectively.
-                  // But we can't easily guess what they want.
-                  
-                  // Let's leave state as is but maybe add a class to indicate error?
-                  // User said "can't put through a trip".
-                  // This implies validation on SUBMIT or active prevention.
-                  
-                  // ACTIVE PREVENTION:
-                  // If we detect this state, let's auto-fix timeRet to be dep + 1 hr
-                  // Only if we are actively changing it? 
-                  
-                  // Let's just auto-bump invalid return time to be after departure
-                  if(activeTimeTarget === 'ret') {
-                       // User is changing return time to something invalid
-                       // Let's allow it but maybe it's weird.
-                  }
-              }
-          }
-
           // --- Round Trip Update ---
           const roundPlaceholder = currentInput.querySelector(".round_placeholder");
           const depDateEl = currentInput.querySelector(".round_trip_departure_date");
@@ -325,7 +276,6 @@ document.addEventListener("DOMContentLoaded", () => {
           const retTimeEl = currentInput.querySelector(".round_trip_return_time");
 
           if (selectedDateDep) {
-              // ... existing logic ...
               // 1. Hide Global Placeholder
               if(roundPlaceholder) roundPlaceholder.style.display = "none";
 
@@ -352,13 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
                           console.error("Return time must be after departure time.");
                       }
                       
-                      // Clear the invalid time from display but keep the date?
-                      // Or just let it stay but rely on the toast? 
-                      // User asked to "display a toast message instead of red text".
-                      // So we show the time normally (white/black) but pop the toast.
-                      
                       if (retTimeEl) {
-                          // Clear the time display to indicate invalid selection
                           retTimeEl.textContent = ""; 
                       }
                   } else {
@@ -372,7 +316,6 @@ document.addEventListener("DOMContentLoaded", () => {
                       retDateEl.textContent = formatDate(selectedDateRet);
                   }
               } else {
-                  // ...
                   if(retDateEl) {
                       retDateEl.style.display = "block";
                       retDateEl.textContent = "Return date";
@@ -381,7 +324,6 @@ document.addEventListener("DOMContentLoaded", () => {
               }
               
           } else {
-              // ...
               if(roundPlaceholder) roundPlaceholder.style.display = "block";
               
               if(depDateEl) {
@@ -402,9 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
           
           currentInput.dataset.depTime = JSON.stringify(timeDep);
           
-          // Only save RetDate/Time if present (and time is valid implicit in UI state but let's be safe)
-          // Actually, if we cleared the UI, we should probably not save the invalid time to dataset either?
-          // But strict validity check is better:
+          
           let isRetValid = true;
           if (selectedDateDep && selectedDateRet && 
               selectedDateDep.getTime() === selectedDateRet.getTime()) {
@@ -417,10 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (isRetValid) {
              currentInput.dataset.retTime = JSON.stringify(timeRet);
           } else {
-             // If invalid, maybe don't save it? Or save null?
-             // If we don't save it, next reload defaults to 12:00 AM.
-             // That's fine.
-             delete currentInput.dataset.retTime; // Remove invalid time
+             delete currentInput.dataset.retTime; 
           }
 
       } else {
@@ -667,20 +604,11 @@ document.addEventListener("DOMContentLoaded", () => {
            e.stopPropagation();
            activeTimeTarget = targetKey; 
            
-           // If clicking distinct display, move list? 
-           // The list is absolute mostly.
-           // However, layout might need it to be appended near the display if we want perfect alignment.
-           // For now, let's keep list in place and just update active target.
-           
            // Toggle visibility
-           const isVisible = timeList.classList.contains("show");
-           // If we click a different one while open, just refresh content.
            
            generateTimeList(); // Refresh with correct selection
            timeList.classList.add("show");
            
-           // Simple toggle off if clicking same?
-           // Actually global click handles outside.
        };
    }
    setupTimeDisplay(timeDisplayDep, 'dep');
@@ -717,8 +645,6 @@ document.addEventListener("DOMContentLoaded", () => {
          inputs.forEach((i) => i.classList.remove("active-input"));
          input.classList.add("active-input");
 
-         // Reset or Load State (Basic Reset for Demo)
-         // To persist, read datasets here...
          if(currentInput.dataset.depDate) {
              selectedDateDep = new Date(currentInput.dataset.depDate);
          } else if (currentInput.dataset.selectedDate) {
@@ -826,5 +752,5 @@ document.addEventListener("DOMContentLoaded", () => {
    
    // Init
    generateTimeList();
-   // renderCalendar(); // Wait for click to render specific state
+   generateTimeList();
 });
