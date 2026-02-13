@@ -611,33 +611,41 @@ document.addEventListener("DOMContentLoaded", () => {
          if (currentInput.dataset.depTime) {
              // Round Trip Format
              try {
-                 timeDep = JSON.parse(currentInput.dataset.depTime);
+                 const data = JSON.parse(currentInput.dataset.depTime);
+                 timeDep.h = data.h;
+                 timeDep.m = data.m;
+                 timeDep.ampm = data.ampm;
              } catch (e) {
                  console.error("Error parsing depTime", e);
              }
          } else if (currentInput.dataset.selectedHour) {
              // One Way Format (Legacy keys)
-             timeDep = {
-                 h: currentInput.dataset.selectedHour,
-                 m: currentInput.dataset.selectedMinute || "00",
-                 ampm: currentInput.dataset.selectedAmPm || "AM"
-             };
+             timeDep.h = currentInput.dataset.selectedHour;
+             timeDep.m = currentInput.dataset.selectedMinute || "00";
+             timeDep.ampm = currentInput.dataset.selectedAmPm || "AM";
          } else {
             // Default if nothing saved
-            timeDep = { h: "12", m: "00", ampm: "AM" };
+            timeDep.h = "12"; timeDep.m = "00"; timeDep.ampm = "AM";
          }
 
          if (currentInput.dataset.retTime) {
              try {
-                 timeRet = JSON.parse(currentInput.dataset.retTime);
+                 const data = JSON.parse(currentInput.dataset.retTime);
+                 timeRet.h = data.h;
+                 timeRet.m = data.m;
+                 timeRet.ampm = data.ampm;
              } catch (e) {
                  console.error("Error parsing retTime", e);
              }
          } else {
-            timeRet = { h: "12", m: "00", ampm: "AM" };
+            timeRet.h = "12"; timeRet.m = "00"; timeRet.ampm = "AM";
          }
          
          viewingDate = selectedDateDep ? new Date(selectedDateDep) : new Date();
+
+         // Re-bind AM/PM handlers to ensure they point to the correct object/properties
+         setupAmPm(ampmDep, timeDep);
+         setupAmPm(ampmRet, timeRet);
 
          updateTimeControls();
          renderCalendar();
