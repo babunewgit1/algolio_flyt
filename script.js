@@ -339,7 +339,11 @@ document.addEventListener("DOMContentLoaded", () => {
               
               // 3. Handle Return Section
               if (selectedDateRet) {
-                  const isSameDay = selectedDateDep.getTime() === selectedDateRet.getTime();
+                  // Robust Date Comparison
+                  const isSameDay = selectedDateDep.getFullYear() === selectedDateRet.getFullYear() &&
+                                    selectedDateDep.getMonth() === selectedDateRet.getMonth() &&
+                                    selectedDateDep.getDate() === selectedDateRet.getDate();
+                                    
                   if (isSameDay && getMinutes(timeRet) <= getMinutes(timeDep)) {
                       // Invalid Time State: Show Error using Toast
                       if(window.toast && window.toast.error) {
@@ -356,12 +360,10 @@ document.addEventListener("DOMContentLoaded", () => {
                       if (retTimeEl) {
                           // Clear the time display to indicate invalid selection
                           retTimeEl.textContent = ""; 
-                          retTimeEl.style.color = ""; 
                       }
                   } else {
                       if (retTimeEl) {
                           retTimeEl.textContent = formatTime(timeRet);
-                          retTimeEl.style.color = ""; 
                       }
                   }
 
