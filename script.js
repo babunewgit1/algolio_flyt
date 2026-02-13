@@ -354,8 +354,9 @@ document.addEventListener("DOMContentLoaded", () => {
                       // So we show the time normally (white/black) but pop the toast.
                       
                       if (retTimeEl) {
-                          retTimeEl.textContent = formatTime(timeRet);
-                          retTimeEl.style.color = ""; // Remove red color
+                          // Clear the time display to indicate invalid selection
+                          retTimeEl.textContent = ""; 
+                          retTimeEl.style.color = ""; 
                       }
                   } else {
                       if (retTimeEl) {
@@ -397,11 +398,28 @@ document.addEventListener("DOMContentLoaded", () => {
           // Update dataset
           if(selectedDateDep) currentInput.dataset.depDate = selectedDateDep.toISOString();
           
-          // Only save RetDate if valid or let backend handle?
-          if(selectedDateRet) currentInput.dataset.retDate = selectedDateRet.toISOString();
-          
           currentInput.dataset.depTime = JSON.stringify(timeDep);
-          currentInput.dataset.retTime = JSON.stringify(timeRet);
+          
+          // Only save RetDate/Time if present (and time is valid implicit in UI state but let's be safe)
+          // Actually, if we cleared the UI, we should probably not save the invalid time to dataset either?
+          // But strict validity check is better:
+          let isRetValid = true;
+          if (selectedDateDep && selectedDateRet && 
+              selectedDateDep.getTime() === selectedDateRet.getTime()) {
+              if (getMinutes(timeRet) <= getMinutes(timeDep)) {
+                  isRetValid = false;
+              }
+          }
+
+          if(selectedDateRet) currentInput.dataset.retDate = selectedDateRet.toISOString();
+          if (isRetValid) {
+             currentInput.dataset.retTime = JSON.stringify(timeRet);
+          } else {
+             // If invalid, maybe don't save it? Or save null?
+             // If we don't save it, next reload defaults to 12:00 AM.
+             // That's fine.
+             delete currentInput.dataset.retTime; // Remove invalid time
+          }
 
       } else {
           // --- One Way Update ---
