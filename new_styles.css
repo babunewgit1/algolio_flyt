@@ -1,0 +1,54 @@
+/* Widget Header Tabs */
+.widget-header {
+  display: flex;
+  width: 100%;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.header-tab {
+  flex: 1;
+  padding: 15px 20px;
+  cursor: pointer;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: background-color 0.2s;
+  min-height: 50px;
+}
+
+.header-tab:last-child {
+  border-right: none;
+}
+
+.header-tab.active {
+  background-color: #f9fafb;
+  border-bottom: 3px solid #1f2937; /* Visual indicator */
+}
+
+.tab-row {
+  line-height: 1.4;
+}
+
+.date-row {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.time-row {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.header-tab:not(.active) .date-row,
+.header-tab:not(.active) .time-row {
+  color: #9ca3af;
+}
+
+/* Updated Time View for Multiple Rows */
+.time-row-wrapper {
+  margin-bottom: 15px;
+  position: relative; /* Context for dropdown if needed */
+}

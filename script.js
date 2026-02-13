@@ -224,41 +224,159 @@ document.addEventListener("DOMContentLoaded", () => {
    const rightDaysContainer = document.getElementById("days-right");
    const prevBtn = document.querySelector(".prev-month");
    const nextBtns = document.querySelectorAll(".next-month");
-   const amPmBtns = document.querySelectorAll(".ampm-btn");
    const timeList = document.getElementById("time-list");
    const confirmBtn = document.getElementById("confirm-selection");
    const closeBtn = document.getElementById("close-calendar");
-   const timeDisplay = document.getElementById("selected-time-display");
+
+   // New Time Controls
+   const timeSectionRet = document.getElementById("time-section-ret");
+   const timeDisplayDep = document.getElementById("time-display-dep");
+   const timeDisplayRet = document.getElementById("time-display-ret");
+   const ampmDep = document.getElementById("ampm-dep");
+   const ampmRet = document.getElementById("ampm-ret");
 
    let currentInput = null;
-   let viewingDate = new Date(); // The date determining the left month
-   // viewingDate.setDate(1); // Ensure we start at the 1st
-
-   let selectedDate = null;
-   let selectedHour = "12";
-   let selectedMinute = "00";
-   let selectedAmPm = "AM";
+   let viewingDate = new Date(); 
+   
+   // State
+   let isRoundTrip = false;
+   // We separate logical state for Departure vs Return
+   // For One-Way, we use 'dep' values.
+   let selectedDateDep = null;
+   let selectedDateRet = null;
+   
+   // Time State objects
+   let timeDep = { h: "12", m: "00", ampm: "AM" };
+   let timeRet = { h: "12", m: "00", ampm: "AM" };
+   
+   // Which time picker is currently open? 'dep' or 'ret'
+   let activeTimeTarget = 'dep'; 
 
    const monthNames = [
-      "JANUARY",
-      "FEBRUARY",
-      "MARCH",
-      "APRIL",
-      "MAY",
-      "JUNE",
-      "JULY",
-      "AUGUST",
-      "SEPTEMBER",
-      "OCTOBER",
-      "NOVEMBER",
-      "DECEMBER",
+      "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+      "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
    ];
+
+   function updateRealTimeUI() {
+      if (!currentInput) return;
+      
+      const formatTime = (t) => `${t.h}:${t.m} ${t.ampm}`;
+      const formatDate = (d) => d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+
+      if (isRoundTrip) {
+          // --- Round Trip Update ---
+          const roundPlaceholder = currentInput.querySelector(".round_placeholder");
+          const depDateEl = currentInput.querySelector(".round_trip_departure_date");
+          const depTimeEl = currentInput.querySelector(".round_trip_departure_time");
+          const retDateEl = currentInput.querySelector(".round_trip_return_date");
+          const retTimeEl = currentInput.querySelector(".round_trip_return_time");
+
+          if (selectedDateDep) {
+              // 1. Hide Global Placeholder
+              if(roundPlaceholder) roundPlaceholder.style.display = "none";
+
+              // 2. Show Departure Date & Time and set text
+              if(depDateEl) {
+                  depDateEl.style.display = "block";
+                  depDateEl.textContent = formatDate(selectedDateDep);
+                  depDateEl.classList.remove("roundtrip_date_placeholder"); 
+              }
+              if (depTimeEl) depTimeEl.textContent = formatTime(timeDep);
+              
+              // 3. Handle Return Section
+              if (selectedDateRet) {
+                  // Return Selected: Show Date & Time
+                  if(retDateEl) {
+                      retDateEl.style.display = "block";
+                      retDateEl.textContent = formatDate(selectedDateRet);
+                  }
+                  if (retTimeEl) retTimeEl.textContent = formatTime(timeRet);
+              } else {
+                  // Return NOT Selected: Show "Return date" Placeholder text in the Date Element
+                  if(retDateEl) {
+                      retDateEl.style.display = "block";
+                      retDateEl.textContent = "Return date";
+                  }
+                  if (retTimeEl) retTimeEl.textContent = "";
+              }
+              
+          } else {
+              // No Departure Selected: Show Global Placeholder, Hide others
+              if(roundPlaceholder) roundPlaceholder.style.display = "block";
+              
+              if(depDateEl) {
+                  depDateEl.style.display = "none";
+                  depDateEl.textContent = "";
+              }
+              if (depTimeEl) depTimeEl.textContent = "";
+              
+              if(retDateEl) {
+                  retDateEl.style.display = "none";
+                  retDateEl.textContent = "";
+              }
+              if (retTimeEl) retTimeEl.textContent = "";
+          }
+
+          // Update dataset
+          if(selectedDateDep) currentInput.dataset.depDate = selectedDateDep.toISOString();
+          if(selectedDateRet) currentInput.dataset.retDate = selectedDateRet.toISOString();
+          currentInput.dataset.depTime = JSON.stringify(timeDep);
+          currentInput.dataset.retTime = JSON.stringify(timeRet);
+
+      } else {
+          // --- One Way Update ---
+          const oneWayDate = currentInput.querySelector(".one_way_date");
+          const oneWayTime = currentInput.querySelector(".one_way_time");
+          const dateField = currentInput.querySelector(".date-input"); // Legacy fallback
+          const timeField = currentInput.querySelector(".time-input"); // Legacy fallback
+
+          const dStr = formatDate(selectedDateDep);
+          const tStr = formatTime(timeDep);
+
+          if (oneWayDate && selectedDateDep) {
+             oneWayDate.textContent = dStr;
+             oneWayDate.classList.remove("one_way_date_placeholder");
+             if (oneWayTime) oneWayTime.textContent = tStr;
+          } else if (oneWayTime) {
+              oneWayTime.textContent = "";
+          }
+
+          if (dateField && selectedDateDep) dateField.value = dStr;
+          if (timeField && selectedDateDep) timeField.value = tStr;
+          
+          if(selectedDateDep) currentInput.dataset.selectedDate = selectedDateDep.toISOString();
+          currentInput.dataset.selectedHour = timeDep.h;
+          currentInput.dataset.selectedMinute = timeDep.m;
+          currentInput.dataset.selectedAmPm = timeDep.ampm;
+      }
+   }
+
+   function updateTimeControls() {
+       // Display Texts
+       if(timeDisplayDep) timeDisplayDep.textContent = `${timeDep.h}:${timeDep.m}`;
+       if(timeDisplayRet) timeDisplayRet.textContent = `${timeRet.h}:${timeRet.m}`;
+       
+       // AM/PM Active States
+       if(ampmDep) {
+           Array.from(ampmDep.children).forEach(btn => {
+               btn.classList.toggle("active", btn.dataset.val === timeDep.ampm);
+           });
+       }
+       if(ampmRet) {
+           Array.from(ampmRet.children).forEach(btn => {
+               btn.classList.toggle("active", btn.dataset.val === timeRet.ampm);
+           });
+       }
+   }
 
    // --- Time List Generation ---
    function generateTimeList() {
       if(!timeList) return;
       timeList.innerHTML = "";
       const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+      // Which time object are we targeting?
+      const targetTime = (activeTimeTarget === 'ret') ? timeRet : timeDep;
 
       hours.forEach((h) => {
          ["00", "30"].forEach((m) => {
@@ -268,35 +386,27 @@ document.addEventListener("DOMContentLoaded", () => {
             div.textContent = timeStr;
 
             // Check Selection
-            if (timeStr === `${selectedHour}:${selectedMinute}`) {
+            if (timeStr === `${targetTime.h}:${targetTime.m}`) {
                div.classList.add("selected");
             }
 
             div.onclick = (e) => {
                e.stopPropagation();
-               selectedHour = String(h).padStart(2, "0");
-               selectedMinute = m;
-               updateTimeUI();
-               if(timeList) timeList.classList.remove("show"); // Close dropdown
+               targetTime.h = String(h).padStart(2, "0");
+               targetTime.m = m;
+               
+               updateTimeControls();
+               updateRealTimeUI(); // Update DOM immediately
+               if(timeList) timeList.classList.remove("show"); 
             };
-
             timeList.appendChild(div);
          });
       });
    }
-
-   function updateTimeUI() {
-      if(!timeDisplay) return;
-      // Update text display
-      timeDisplay.textContent = `${selectedHour}:${selectedMinute}`;
-      // Re-render list to show active state
-      generateTimeList();
-   }
-
+   
    // --- Calendar Rendering ---
    function renderCalendar() {
       if(!leftMonthLabel) return;
-      // Always render starting from viewingDate
       renderMonth(viewingDate, leftMonthLabel, leftDaysContainer);
 
       const nextMonthDate = new Date(viewingDate);
@@ -312,36 +422,82 @@ document.addEventListener("DOMContentLoaded", () => {
       labelEl.textContent = `${monthNames[month]} ${year}`;
       daysEl.innerHTML = "";
 
-      const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Sunday
+      const firstDayIndex = new Date(year, month, 1).getDay(); 
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-      // Empty slots for previous month
       for (let i = 0; i < firstDayIndex; i++) {
          const empty = document.createElement("div");
          empty.className = "day empty";
          daysEl.appendChild(empty);
       }
 
-      // Days
       for (let i = 1; i <= daysInMonth; i++) {
          const dayEl = document.createElement("div");
          dayEl.className = "day";
-         dayEl.innerHTML = `${i} <span class="price-tag">$120k</span>`; // Mock Data
-
+         dayEl.innerHTML = `${i} <span class="price-tag">$120k</span>`; 
+         
+         const currentDate = new Date(year, month, i);
+         
          // Selection Logic
-         if (
-            selectedDate &&
-            selectedDate.getDate() === i &&
-            selectedDate.getMonth() === month &&
-            selectedDate.getFullYear() === year
-         ) {
-            dayEl.classList.add("selected");
+         let isSelected = false;
+         // Check Departure
+         if (selectedDateDep && 
+             selectedDateDep.getDate() === i && 
+             selectedDateDep.getMonth() === month && 
+             selectedDateDep.getFullYear() === year) {
+             isSelected = true;
          }
+         // Check Return
+         if (isRoundTrip && selectedDateRet && 
+             selectedDateRet.getDate() === i && 
+             selectedDateRet.getMonth() === month && 
+             selectedDateRet.getFullYear() === year) {
+             isSelected = true;
+         }
+         
+         // Range Highlight (Optional but good)
+         if (isRoundTrip && selectedDateDep && selectedDateRet && currentDate > selectedDateDep && currentDate < selectedDateRet) {
+             dayEl.classList.add("in-range"); // Add CSS for this later if desired
+         }
+
+         if (isSelected) dayEl.classList.add("selected");
 
          dayEl.onclick = (e) => {
             e.stopPropagation();
-            selectedDate = new Date(year, month, i);
+            const clickedDate = new Date(year, month, i);
+            
+            if (isRoundTrip) {
+                // Round Trip Logic:
+                // 1. If nothing selected, set Dep.
+                // 2. If Dep selected, Ret empty:
+                //    - If clicked < Dep, update Dep.
+                //    - If clicked > Dep, set Ret. (And close?)
+                // 3. If both selected:
+                //    - Reset both? Or assume new start? Let's reset to new Dep.
+                
+                if (!selectedDateDep) {
+                    selectedDateDep = clickedDate;
+                } else if (!selectedDateRet) {
+                    if (clickedDate < selectedDateDep) {
+                        selectedDateDep = clickedDate; // Retroactive move start
+                    } else if (clickedDate.getTime() === selectedDateDep.getTime()) {
+                        // Same day round trip? Allow it.
+                        selectedDateRet = clickedDate;
+                    } else {
+                        selectedDateRet = clickedDate;
+                    }
+                } else {
+                    // Reset triggered
+                    selectedDateDep = clickedDate;
+                    selectedDateRet = null;
+                }
+            } else {
+                // One Way
+                selectedDateDep = clickedDate;
+            }
+
             renderCalendar();
+            updateRealTimeUI();
          };
 
          daysEl.appendChild(dayEl);
@@ -363,22 +519,48 @@ document.addEventListener("DOMContentLoaded", () => {
       };
    });
 
-   amPmBtns.forEach((btn) => {
-      btn.onclick = (e) => {
-         e.stopPropagation();
-         amPmBtns.forEach((b) => b.classList.remove("active"));
-         btn.classList.add("active");
-         selectedAmPm = btn.dataset.val;
-      };
-   });
-
-   // Toggle Time List Dropdown
-   if(timeDisplay) {
-      timeDisplay.onclick = (e) => {
-         e.stopPropagation();
-         if(timeList) timeList.classList.toggle("show");
-      };
+   // AM/PM setup helper
+   function setupAmPm(wrapper, timeObj) {
+       if(!wrapper) return;
+       const btns = wrapper.querySelectorAll(".ampm-btn");
+       btns.forEach(btn => {
+           btn.onclick = (e) => {
+               e.stopPropagation();
+               timeObj.ampm = btn.dataset.val;
+               updateTimeControls();
+               updateRealTimeUI();
+           }
+       });
    }
+   setupAmPm(ampmDep, timeDep);
+   setupAmPm(ampmRet, timeRet);
+
+   // Time Display Click (Open Dropdown) logic helper
+   function setupTimeDisplay(displayEl, targetKey) {
+       if(!displayEl) return;
+       displayEl.onclick = (e) => {
+           e.stopPropagation();
+           activeTimeTarget = targetKey; 
+           
+           // If clicking distinct display, move list? 
+           // The list is absolute mostly.
+           // However, layout might need it to be appended near the display if we want perfect alignment.
+           // For now, let's keep list in place and just update active target.
+           
+           // Toggle visibility
+           const isVisible = timeList.classList.contains("show");
+           // If we click a different one while open, just refresh content.
+           
+           generateTimeList(); // Refresh with correct selection
+           timeList.classList.add("show");
+           
+           // Simple toggle off if clicking same?
+           // Actually global click handles outside.
+       };
+   }
+   setupTimeDisplay(timeDisplayDep, 'dep');
+   setupTimeDisplay(timeDisplayRet, 'ret');
+
 
    // Input Click -> Open Widget
    inputs.forEach((input) => {
@@ -388,106 +570,94 @@ document.addEventListener("DOMContentLoaded", () => {
 
          currentInput = input;
          
-         // Append widget to clicked input
+         // Detect Mode
+         const searchForm = input.closest(".action_form"); // .one_way_search or .round_trip_search
+         isRoundTrip = searchForm && searchForm.classList.contains("round_trip_search");
+
+         // UI Adjustment
+         if(timeSectionRet) {
+             timeSectionRet.style.display = isRoundTrip ? "block" : "none";
+         }
+         
+         // Append Widget
          if(widget) {
              input.appendChild(widget);
              widget.style.top = "";
              widget.style.left = "";
-             
-             // Trigger animation restart
              widget.classList.remove("active");
-             // Force reflow
              void widget.offsetWidth;
              widget.classList.add("active");
          }
 
-         // Remove active class from others
          inputs.forEach((i) => i.classList.remove("active-input"));
          input.classList.add("active-input");
 
-         // Load state from input if exists
-         if (input.dataset.selectedDate) {
-            selectedDate = new Date(input.dataset.selectedDate);
-            viewingDate = new Date(selectedDate); // Jump to that month
-            selectedHour = input.dataset.selectedHour;
-            selectedMinute = input.dataset.selectedMinute;
-            selectedAmPm = input.dataset.selectedAmPm;
-         } else {
-            // Reset to defaults if new input
-            selectedDate = null;
-            viewingDate = new Date();
-            selectedHour = "12";
-            selectedMinute = "00";
-            selectedAmPm = "AM";
-         }
+         // Reset or Load State (Basic Reset for Demo)
+         // To persist, read datasets here...
+         if(currentInput.dataset.depDate) selectedDateDep = new Date(currentInput.dataset.depDate);
+         else selectedDateDep = null;
+         
+         if(currentInput.dataset.retDate) selectedDateRet = new Date(currentInput.dataset.retDate);
+         else selectedDateRet = null;
+         
+         // Times (simplified default reset if not saved)
+         // In prod, parse JSON from dataset
+         
+         viewingDate = selectedDateDep ? new Date(selectedDateDep) : new Date();
 
-         // Refresh UI with loaded/reset state
-         updateTimeUI();
-         amPmBtns.forEach((btn) => {
-            if (btn.dataset.val === selectedAmPm) btn.classList.add("active");
-            else btn.classList.remove("active");
-         });
+         updateTimeControls();
          renderCalendar();
+         updateRealTimeUI(); // Ensure displayed text matches state
       });
    });
 
-   // Close Logic
+   // Close / Confirm Logic
+   const closeWidget = () => {
+       if(widget) widget.classList.remove("active");
+       if(timeList) timeList.classList.remove("show");
+       inputs.forEach((i) => i.classList.remove("active-input"));
+   };
+
    if(closeBtn) closeBtn.onclick = (e) => {
        e.stopPropagation();
-       widget.classList.remove("active");
-       inputs.forEach((i) => i.classList.remove("active-input"));
+       closeWidget();
    };
 
    document.addEventListener("click", (e) => {
       if (widget && widget.classList.contains("active")) {
-         if (
-            !widget.contains(e.target) &&
-            !Array.from(inputs).includes(e.target)
-         ) {
-            widget.classList.remove("active");
-            inputs.forEach((i) => i.classList.remove("active-input"));
+          // Careful not to close if clicking inside widget
+         if (!widget.contains(e.target) && !Array.from(inputs).includes(e.target)) {
+            closeWidget();
          }
       }
-      // Close dropdown if clicking outside time display
-      if (timeList && timeList.classList.contains("show") && !timeDisplay.contains(e.target) && !timeList.contains(e.target)) {
-         timeList.classList.remove("show");
+      // Dropdown close logic
+      if (timeList && timeList.classList.contains("show")) {
+          // Check if click is inside any display or the list itself
+          if(!timeList.contains(e.target) && 
+             !timeDisplayDep.contains(e.target) && 
+             (!timeDisplayRet || !timeDisplayRet.contains(e.target))) {
+             timeList.classList.remove("show");
+          }
       }
    });
 
-   // Confirm Button Logic
    if(confirmBtn) confirmBtn.onclick = (e) => {
       e.stopPropagation();
-      if (selectedDate) {
-         const dateStr = selectedDate.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-         });
-
-         const timeStr = `${selectedHour}:${selectedMinute} ${selectedAmPm}`;
-
-         if (currentInput) {
-            const dateField = currentInput.querySelector(".date-input");
-            const timeField = currentInput.querySelector(".time-input");
-
-            if (dateField) dateField.value = dateStr;
-            if (timeField) timeField.value = timeStr;
-
-            // Save state to dataset
-            currentInput.dataset.selectedDate = selectedDate.toISOString();
-            currentInput.dataset.selectedHour = selectedHour;
-            currentInput.dataset.selectedMinute = selectedMinute;
-            currentInput.dataset.selectedAmPm = selectedAmPm;
-         }
-
-         if(widget) widget.classList.remove("active");
-         if (currentInput) currentInput.classList.remove("active-input");
-      } else {
-         alert("Please select a date.");
+      // Validation?
+      if(!selectedDateDep) {
+          alert("Please select a departure date.");
+          return;
       }
+      if(isRoundTrip && !selectedDateRet) {
+          alert("Please select a return date.");
+          return;
+      }
+      
+      updateRealTimeUI();
+      closeWidget();
    };
-
+   
    // Init
    generateTimeList();
-   renderCalendar();
+   // renderCalendar(); // Wait for click to render specific state
 });

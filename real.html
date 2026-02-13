@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.14.3/dist/algoliasearch.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
     <link rel="stylesheet" href="algolio.css" />
+    <link rel="stylesheet" href="home.css" />
   </head>
   <body>
     <div class="action_form one_way_search">
@@ -47,18 +48,8 @@
             <div class="search-results"></div>
           </div>
           <div class="form_left_input form_input_multipul">
-            <input
-              type="text"
-              class="date-input"
-              placeholder="Departure Date"
-              readonly
-            />
-            <input
-              type="text"
-              class="time-input"
-              placeholder="Departure Time"
-              readonly
-            />
+            <p class="one_way_date one_way_date_placeholder">Date and time</p>
+            <p class="one_way_time"></p>
           </div>
           <div class="form_input_pax_wrapper">
             <div class="form_input_pax_input">
@@ -124,32 +115,19 @@
             <div class="search-results"></div>
           </div>
           <div class="form_left_input form_input_multipul">
-            <input
-              type="text"
-              class="date-input"
-              placeholder="Departure Date"
-              readonly
-            />
-            <input
-              type="text"
-              class="time-input"
-              placeholder="Departure Time"
-              readonly
-            />
-          </div>
-          <div class="form_left_input form_input_multipul">
-            <input
-              type="text"
-              class="date-input"
-              placeholder="Return Date"
-              readonly
-            />
-            <input
-              type="text"
-              class="time-input"
-              placeholder="Return Time"
-              readonly
-            />
+            <p class="round_placeholder">Departure/return date and time</p>
+            <div class="trip_date_wrapper">
+              <div class="round_trip_departure">
+                <p
+                  class="roundtrip_date_placeholder round_trip_departure_date"
+                ></p>
+                <p class="round_trip_departure_time"></p>
+              </div>
+              <div class="round_trip_return">
+                <p class="round_trip_return_date"></p>
+                <p class="round_trip_return_time"></p>
+              </div>
+            </div>
           </div>
           <div class="form_input_pax_wrapper">
             <div class="form_input_pax_input">
@@ -238,11 +216,31 @@
 
         <div class="time-view">
           <div class="time-header">TIME</div>
-          <div class="time-controls">
-            <div class="time-display" id="selected-time-display">12:00</div>
-            <div class="ampm-toggle">
-              <span class="ampm-btn active" data-val="AM">AM</span>
-              <span class="ampm-btn" data-val="PM">PM</span>
+          <div class="time-controls-wrapper">
+            <!-- Departure Time -->
+            <div class="time-section" id="time-section-dep">
+              <div class="time-controls" id="time-controls-dep">
+                <div class="time-display" id="time-display-dep">12:00</div>
+                <div class="ampm-toggle" id="ampm-dep">
+                  <span class="ampm-btn active" data-val="AM">AM</span>
+                  <span class="ampm-btn" data-val="PM">PM</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Return Time (Hidden by default) -->
+            <div
+              class="time-section"
+              id="time-section-ret"
+              style="display: none; margin-top: 15px"
+            >
+              <div class="time-controls" id="time-controls-ret">
+                <div class="time-display" id="time-display-ret">12:00</div>
+                <div class="ampm-toggle" id="ampm-ret">
+                  <span class="ampm-btn active" data-val="AM">AM</span>
+                  <span class="ampm-btn" data-val="PM">PM</span>
+                </div>
+              </div>
             </div>
           </div>
 
