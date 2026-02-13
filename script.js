@@ -461,44 +461,46 @@ document.addEventListener("DOMContentLoaded", () => {
          }
 
          if (isSelected) dayEl.classList.add("selected");
-
-         dayEl.onclick = (e) => {
-            e.stopPropagation();
-            const clickedDate = new Date(year, month, i);
-            
-            if (isRoundTrip) {
-                // Round Trip Logic:
-                // 1. If nothing selected, set Dep.
-                // 2. If Dep selected, Ret empty:
-                //    - If clicked < Dep, update Dep.
-                //    - If clicked > Dep, set Ret. (And close?)
-                // 3. If both selected:
-                //    - Reset both? Or assume new start? Let's reset to new Dep.
+         
+         // Disable Past Dates
+         const today = new Date();
+         today.setHours(0, 0, 0, 0); // Normalize today
+         if (currentDate < today) {
+             dayEl.classList.add("disabled");
+             dayEl.style.opacity = "0.3";
+             dayEl.style.pointerEvents = "none";
+         } else {
+             dayEl.onclick = (e) => {
+                e.stopPropagation();
+                const clickedDate = new Date(year, month, i);
                 
-                if (!selectedDateDep) {
-                    selectedDateDep = clickedDate;
-                } else if (!selectedDateRet) {
-                    if (clickedDate < selectedDateDep) {
-                        selectedDateDep = clickedDate; // Retroactive move start
-                    } else if (clickedDate.getTime() === selectedDateDep.getTime()) {
-                        // Same day round trip? Allow it.
-                        selectedDateRet = clickedDate;
+                if (isRoundTrip) {
+                    // Round Trip Logic:
+                    if (!selectedDateDep) {
+                        selectedDateDep = clickedDate;
+                    } else if (!selectedDateRet) {
+                        if (clickedDate < selectedDateDep) {
+                            selectedDateDep = clickedDate; // Retroactive move start
+                        } else if (clickedDate.getTime() === selectedDateDep.getTime()) {
+                            // Same day round trip? Allow it.
+                            selectedDateRet = clickedDate;
+                        } else {
+                            selectedDateRet = clickedDate;
+                        }
                     } else {
-                        selectedDateRet = clickedDate;
+                        // Reset triggered
+                        selectedDateDep = clickedDate;
+                        selectedDateRet = null;
                     }
                 } else {
-                    // Reset triggered
+                    // One Way
                     selectedDateDep = clickedDate;
-                    selectedDateRet = null;
                 }
-            } else {
-                // One Way
-                selectedDateDep = clickedDate;
-            }
-
-            renderCalendar();
-            updateRealTimeUI();
-         };
+    
+                renderCalendar();
+                updateRealTimeUI();
+             };
+         }
 
          daysEl.appendChild(dayEl);
       }
@@ -594,14 +596,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
          // Reset or Load State (Basic Reset for Demo)
          // To persist, read datasets here...
-         if(currentInput.dataset.depDate) selectedDateDep = new Date(currentInput.dataset.depDate);
-         else selectedDateDep = null;
+         if(currentInput.dataset.depDate) {
+             selectedDateDep = new Date(currentInput.dataset.depDate);
+         } else if (currentInput.dataset.selectedDate) {
+             selectedDateDep = new Date(currentInput.dataset.selectedDate);
+         } else {
+             selectedDateDep = null;
+         }
          
          if(currentInput.dataset.retDate) selectedDateRet = new Date(currentInput.dataset.retDate);
          else selectedDateRet = null;
          
-         // Times (simplified default reset if not saved)
-         // In prod, parse JSON from dataset
+         // Restore Time State
+         if (currentInput.dataset.depTime) {
+             // Round Trip Format
+             try {
+                 timeDep = JSON.parse(currentInput.dataset.depTime);
+             } catch (e) {
+                 console.error("Error parsing depTime", e);
+             }
+         } else if (currentInput.dataset.selectedHour) {
+             // One Way Format (Legacy keys)
+             timeDep = {
+                 h: currentInput.dataset.selectedHour,
+                 m: currentInput.dataset.selectedMinute || "00",
+                 ampm: currentInput.dataset.selectedAmPm || "AM"
+             };
+         } else {
+            // Default if nothing saved
+            timeDep = { h: "12", m: "00", ampm: "AM" };
+         }
+
+         if (currentInput.dataset.retTime) {
+             try {
+                 timeRet = JSON.parse(currentInput.dataset.retTime);
+             } catch (e) {
+                 console.error("Error parsing retTime", e);
+             }
+         } else {
+            timeRet = { h: "12", m: "00", ampm: "AM" };
+         }
          
          viewingDate = selectedDateDep ? new Date(selectedDateDep) : new Date();
 
