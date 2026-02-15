@@ -223,7 +223,8 @@ document.addEventListener("DOMContentLoaded", () => {
    const rightDaysContainer = document.getElementById("days-right");
    const prevBtn = document.querySelector(".prev-month");
    const nextBtns = document.querySelectorAll(".next-month");
-   const timeList = document.getElementById("time-list");
+   const timeListDep = document.getElementById("time-list-dep");
+   const timeListRet = document.getElementById("time-list-ret");
    const confirmBtn = document.getElementById("confirm-selection");
    const closeBtn = document.getElementById("close-calendar");
 
@@ -408,13 +409,10 @@ document.addEventListener("DOMContentLoaded", () => {
    }
 
    // --- Time List Generation ---
-   function generateTimeList() {
-      if(!timeList) return;
-      timeList.innerHTML = "";
+   function generateTimeList(listEl, timeObj) {
+      if(!listEl) return;
+      listEl.innerHTML = "";
       const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-
-      // Which time object are we targeting?
-      const targetTime = (activeTimeTarget === 'ret') ? timeRet : timeDep;
 
       hours.forEach((h) => {
          ["00", "30"].forEach((m) => {
@@ -424,27 +422,203 @@ document.addEventListener("DOMContentLoaded", () => {
             div.textContent = timeStr;
 
             // Check Selection
-            if (timeStr === `${targetTime.h}:${targetTime.m}`) {
+            if (timeStr === `${timeObj.h}:${timeObj.m}`) {
                div.classList.add("selected");
             }
 
             div.onclick = (e) => {
                e.stopPropagation();
-               targetTime.h = String(h).padStart(2, "0");
-               targetTime.m = m;
+               timeObj.h = String(h).padStart(2, "0");
+               timeObj.m = m;
                
                updateTimeControls();
                updateRealTimeUI(true); // Update DOM immediately
-               if(timeList) timeList.classList.remove("show"); 
+               listEl.classList.remove("show"); 
             };
-            timeList.appendChild(div);
+            listEl.appendChild(div);
          });
       });
    }
    
+   // --- Pricing & API Logic ---
+   let pricingData = null;
+   let pricingLoading = false;
+   
+   async function fetchPricingData() {
+       // 1. Check Auth
+       if (typeof Cookies === "undefined") return; 
+       const token = Cookies.get("authToken");
+       if (!token) {
+           pricingData = null;
+           return;
+       }
+
+       // 2. Get Airport IDs
+       if (!currentInput) return;
+       const form = currentInput.closest(".action_form");
+       if (!form) return;
+       
+       const blocks = form.querySelectorAll(".eminputblock");
+       if (blocks.length < 2) return;
+       
+       const depPortId = blocks[0].querySelector(".portid")?.textContent;
+       const arrPortId = blocks[1].querySelector(".portid")?.textContent;
+       
+       if (!depPortId || !arrPortId) return;
+
+       // 3. Fetch
+       pricingLoading = true;
+       pricingData = null; // Clear old data
+       renderCalendar();
+       
+       try {
+           const url = "https://operators-dashboard.bubbleapps.io/api/1.1/wf/webflow_datepicker_flyt";
+           
+           const bodyData = {
+               departure_airport_id: depPortId,
+               arrival_airport_id: arrPortId,
+               currency_code: "USD"
+           };
+
+           const res = await fetch(url, {
+               method: "POST",
+               headers: {
+                   "Authorization": `Bearer ${token}`,
+                   "Content-Type": "application/json"
+               },
+               body: JSON.stringify(bodyData)
+           });
+           
+           const json = await res.json();
+           if (json.status === "success") {
+               pricingData = json.response;
+               // Pricing Validation Rule:
+               // If One Way and outbound is 0/empty -> no prices
+               // If Round Trip and (outbound is 0 OR return is 0) -> no prices
+               const outPrice = pricingData.light_outbound_leg_price_usd;
+               const retPrice = pricingData.light_return_leg_price_usd;
+               
+               if (!outPrice) pricingData = null;
+               if (isRoundTrip && (!outPrice || !retPrice)) pricingData = null;
+               
+           } else {
+               pricingData = null;
+           }
+       } catch (err) {
+           console.error("Pricing API Error:", err);
+           pricingData = null;
+       } finally {
+           pricingLoading = false;
+           renderCalendar(); // Re-render once data is back
+       }
+   }
+
+   function calculateDailyPrice(date, mode) {
+       if (!pricingData) return null;
+       
+       // Mode: 'outbound' or 'return'
+       const basePrice = mode === 'return' 
+           ? pricingData.light_return_leg_price_usd 
+           : pricingData.light_outbound_leg_price_usd;
+           
+       if (!basePrice) return null;
+       
+       let finalPrice = basePrice;
+       let color = "#38aa06"; // Green default
+       let hasIntlFee = false;
+       let hasPeakOrPriority = false;
+       
+       // 1. Peak Days
+       // Check if date timestamp is within any range
+       // Date object timestamp is local? API dates seem to be timestamps (ms).
+       // We should normalize 'date' to start of day for cleaner comparison or just use time.
+       const dateTime = date.getTime();
+       // Note: peak_start_dates is array of timestamps
+       
+       let isPeak = false;
+       if (pricingData.peak_start_dates && pricingData.peak_end_dates) {
+           for (let i = 0; i < pricingData.peak_start_dates.length; i++) {
+               const start = pricingData.peak_start_dates[i];
+               const end = pricingData.peak_end_dates[i];
+               // Simple range check
+               if (dateTime >= start && dateTime <= end) {
+                   isPeak = true;
+                   break;
+               }
+           }
+       }
+       
+       if (isPeak) {
+           finalPrice += basePrice * (pricingData.peak_day_pct || 0);
+           hasPeakOrPriority = true;
+       }
+
+       // 2. International Fee
+       if (pricingData["is_international?"]) {
+           finalPrice += basePrice * (pricingData.international_fee_pct || 0);
+           hasIntlFee = true;
+       }
+       
+       // 3. Priority Booking Fee
+       // Calculate hours diff from NOW to Flight Date (start of day? or specific time?)
+       // Since user hasn't picked time yet, usually we assume start of day or strict window?
+       // Let's assume Flight Date starts at 00:00 or similar? 
+       // User requirement: "apply priority_fee_pct if departure is within X hours"
+       // We compare 'date' (which is selected date 00:00 usually?) vs 'now'.
+       // Note: 'date' in render loop is new Date(year, month, i).
+       
+       const now = new Date();
+       const diffMs = date - now;
+       const diffHrs = diffMs / (1000 * 60 * 60);
+       
+       const limitHrs = pricingData["is_international?"] 
+           ? (pricingData.international_priority_window_hrs || 96)
+           : (pricingData.domestic_priority_window_hrs || 72);
+           
+       if (diffHrs < limitHrs && diffHrs > -24) { // Apply if within window (and not way in past)
+           finalPrice += basePrice * (pricingData.priority_fee_pct || 0);
+           hasPeakOrPriority = true;
+       }
+       
+       // Color Logic
+       if (hasPeakOrPriority) {
+           color = "#d22e2e"; // Red
+       } else if (hasIntlFee) {
+           color = "#e39000"; // Orange
+       } else {
+           color = "#38aa06"; // Green
+       }
+       
+       return { price: finalPrice, color };
+   }
+
    // --- Calendar Rendering ---
    function renderCalendar() {
       if(!leftMonthLabel) return;
+      
+      // Ensure Disclaimer Exists
+      let disclaimer = widget.querySelector(".price-disclaimer");
+      if (!disclaimer) {
+          disclaimer = document.createElement("div");
+          disclaimer.className = "price-disclaimer";
+          disclaimer.innerText = "Prices shown are estimates. Final pricing, availability, and applicable fees are confirmed after submitting your search.";
+          disclaimer.style.display = "none";
+      }
+      
+      // Append to Widget
+      if (disclaimer.parentNode !== widget) widget.appendChild(disclaimer);
+
+      // State Management
+      if (pricingLoading) {
+          disclaimer.style.display = "none";
+      } else {
+          if (pricingData) {
+              disclaimer.style.display = "block";
+          } else {
+              disclaimer.style.display = "none";
+          }
+      }
+
       renderMonth(viewingDate, leftMonthLabel, leftDaysContainer);
 
       const nextMonthDate = new Date(viewingDate);
@@ -478,8 +652,11 @@ document.addEventListener("DOMContentLoaded", () => {
       labelEl.textContent = `${monthNames[month]} ${year}`;
       daysEl.innerHTML = "";
 
-      const firstDayIndex = new Date(year, month, 1).getDay(); 
+      const firstDayIndex = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       for (let i = 0; i < firstDayIndex; i++) {
          const empty = document.createElement("div");
@@ -490,9 +667,40 @@ document.addEventListener("DOMContentLoaded", () => {
       for (let i = 1; i <= daysInMonth; i++) {
          const dayEl = document.createElement("div");
          dayEl.className = "day";
-         dayEl.innerHTML = `${i} <span class="price-tag">$120k</span>`; 
          
+         // Price Tag Logic
          const currentDate = new Date(year, month, i);
+         // Determine Mode:
+         // If RoundTrip and selectedDateDep is SET (and we are NOT just editing Dep?), show Return Price?
+         // Logic: if selectedDateDep is set, we are likely picking Return, so show Return prices.
+         // Unless we clicked 'Departure' input specifically to re-edit? 
+         // Assuming sequential flow:
+         let mode = 'outbound';
+         if (isRoundTrip && selectedDateDep && !selectedDateRet) {
+             mode = 'return';
+             
+             // If we are seeing dates BEFORE departure, maybe no price?
+             // Or price is return leg? 
+         }
+         
+         let priceHtml = "";
+         
+         let isFuture = currentDate >= today;
+         
+         if (isFuture) {
+             if (pricingLoading) {
+                 priceHtml = `<div class="date-loader"></div>`;
+             } else if (pricingData) {
+                 const priceObj = calculateDailyPrice(currentDate, mode);
+                 if (priceObj) {
+                     const fmtPrice = Math.round(priceObj.price).toLocaleString();
+                     priceHtml = `<span class="price-tag" style="color: ${priceObj.color};">${fmtPrice}</span>`;
+                 }
+             }
+         }
+         
+         dayEl.innerHTML = `${i} ${priceHtml}`; 
+         
          
          // Selection Logic
          let isSelected = false;
@@ -519,9 +727,15 @@ document.addEventListener("DOMContentLoaded", () => {
          if (isSelected) dayEl.classList.add("selected");
          
          // Disable Past Dates
-         const today = new Date();
-         today.setHours(0, 0, 0, 0); // Normalize today
-         if (currentDate < today) {
+
+         
+         // Disable Return dates before Departure
+         let isDisabled = currentDate < today;
+         if (mode === 'return' && selectedDateDep && currentDate < selectedDateDep) {
+             isDisabled = true; 
+         }
+
+         if (isDisabled) {
              dayEl.classList.add("disabled");
              dayEl.style.opacity = "0.3";
              dayEl.style.pointerEvents = "none";
@@ -599,21 +813,21 @@ document.addEventListener("DOMContentLoaded", () => {
    setupAmPm(ampmRet, timeRet);
 
    // Time Display Click (Open Dropdown) logic helper
-   function setupTimeDisplay(displayEl, targetKey) {
+   function setupTimeDisplay(displayEl, listEl, timeObj) {
        if(!displayEl) return;
        displayEl.onclick = (e) => {
            e.stopPropagation();
-           activeTimeTarget = targetKey; 
            
-           // Toggle visibility
+           // Close others
+           if(timeListDep) timeListDep.classList.remove("show");
+           if(timeListRet) timeListRet.classList.remove("show");
            
-           generateTimeList(); // Refresh with correct selection
-           timeList.classList.add("show");
-           
+           generateTimeList(listEl, timeObj);
+           if(listEl) listEl.classList.add("show");
        };
    }
-   setupTimeDisplay(timeDisplayDep, 'dep');
-   setupTimeDisplay(timeDisplayRet, 'ret');
+   setupTimeDisplay(timeDisplayDep, timeListDep, timeDep);
+   setupTimeDisplay(timeDisplayRet, timeListRet, timeRet);
 
 
    // Input Click -> Open Widget
@@ -641,7 +855,11 @@ document.addEventListener("DOMContentLoaded", () => {
              widget.classList.remove("active");
              void widget.offsetWidth;
              widget.classList.add("active");
+             
+             // FETCH PRICING DATA HERE
+             fetchPricingData();
          }
+
 
          inputs.forEach((i) => i.classList.remove("active-input"));
          input.classList.add("active-input");
@@ -706,7 +924,8 @@ document.addEventListener("DOMContentLoaded", () => {
    // Close / Confirm Logic
    const closeWidget = () => {
        if(widget) widget.classList.remove("active");
-       if(timeList) timeList.classList.remove("show");
+       if(timeListDep) timeListDep.classList.remove("show");
+       if(timeListRet) timeListRet.classList.remove("show");
        inputs.forEach((i) => i.classList.remove("active-input"));
    };
 
@@ -723,12 +942,15 @@ document.addEventListener("DOMContentLoaded", () => {
          }
       }
       // Dropdown close logic
-      if (timeList && timeList.classList.contains("show")) {
-          // Check if click is inside any display or the list itself
-          if(!timeList.contains(e.target) && 
-             !timeDisplayDep.contains(e.target) && 
-             (!timeDisplayRet || !timeDisplayRet.contains(e.target))) {
-             timeList.classList.remove("show");
+      // Dropdown close logic
+      if (timeListDep && timeListDep.classList.contains("show")) {
+          if (!timeListDep.contains(e.target) && !timeDisplayDep.contains(e.target)) {
+               timeListDep.classList.remove("show");
+          }
+      }
+      if (timeListRet && timeListRet.classList.contains("show")) {
+          if (!timeListRet.contains(e.target) && (timeDisplayRet && !timeDisplayRet.contains(e.target))) {
+               timeListRet.classList.remove("show");
           }
       }
    });
@@ -774,8 +996,8 @@ document.addEventListener("DOMContentLoaded", () => {
    };
    
    // Init
-   generateTimeList();
-   generateTimeList();
+   generateTimeList(timeListDep, timeDep);
+   generateTimeList(timeListRet, timeRet);
 });
 
 

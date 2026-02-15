@@ -127,7 +127,7 @@ p.uniqueid {
 }
 
 .calendar-widget.active {
-  display: flex;
+  display: block;
   animation: slideDownFade 0.3s ease-out forwards;
 }
 
@@ -181,6 +181,20 @@ p.uniqueid {
 
 #month-left {
   border-right: 1px solid #8c8c8c;
+}
+
+.time-list-wrapper {
+  padding-left: 25px;
+  padding-right: 25px;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  z-index: 9;
+  top: 45px;
+}
+
+.time-section {
+  position: relative;
 }
 
 .nav-btn {
@@ -252,9 +266,8 @@ p.uniqueid {
 }
 
 .day .price-tag {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
-  color: #10b981;
   margin-top: 5px;
 }
 
@@ -262,15 +275,29 @@ p.uniqueid {
   color: #a7f3d0;
 }
 
+.price-disclaimer {
+  font-size: 12px;
+  text-align: center;
+  opacity: 0.7;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.day.selected span.price-tag {
+  color: #fff !important;
+}
+
 .time-view {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-auto-flow: column;
   background-color: #fff;
   max-width: 380px;
   border: 1px solid #04142a;
   border-radius: 6px;
   padding-bottom: 16px;
+  min-height: 500px;
+  grid-template-rows: 61px 160px 1fr;
 }
 
 .time-header {
@@ -297,7 +324,7 @@ p.uniqueid {
 
 .timeblock {
   display: grid;
-  grid-template-columns: calc(55% - 6px) calc(45% - 6px);
+  grid-template-columns: 1fr;
   column-gap: 12px;
   padding-left: 25px;
   padding-right: 25px;
@@ -356,17 +383,13 @@ p.uniqueid {
   overflow-y: auto;
   background-color: #f4f6f8;
   margin-top: 4px;
-  height: 335px;
+  height: 190px;
   border-radius: 6px;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
+  display: none;
 }
 
 .time-list-container.show {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: all;
+  display: block;
 }
 
 /* Custom Scrollbar */
@@ -449,6 +472,43 @@ p.uniqueid {
   column-gap: 15px;
 }
 
+.date-loader {
+  position: relative;
+  width: 70%;
+  height: 6px;
+  background-color: #e3f2fd;
+  overflow: hidden;
+  border-radius: 10px;
+  margin: auto;
+  margin-top: 4px;
+}
+
+.date-loader::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background-color: #68717f;
+  animation: indeterminate 2s infinite;
+}
+
+@keyframes indeterminate {
+  0% {
+    left: 0%;
+    width: 0%;
+  }
+  50% {
+    left: 0%;
+    width: 100%;
+  }
+  100% {
+    left: 100%;
+    width: 0%;
+  }
+}
+
 /*
 ====================================
       Responsive Start
@@ -460,16 +520,15 @@ p.uniqueid {
     width: 350px;
     top: 54px;
   }
-}
 
-@media screen and (min-width: 992px) and (max-width: 1280px) {
-  .search-results {
-    width: 350px;
-    top: 46px;
+  .day.selected span.price-tag {
+    font-size: 10px;
   }
-}
 
-@media screen and (min-width: 1280px) and (max-width: 1440px) {
+  .time-list-wrapper {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
   .months-container {
     flex: 3;
   }
@@ -488,6 +547,22 @@ p.uniqueid {
   .timeblock {
     padding-left: 10px;
     padding-right: 10px;
+  }
+}
+@media screen and (min-width: 992px) and (max-width: 1280px) {
+  .search-results {
+    width: 350px;
+    top: 46px;
+  }
+
+  .time-list-wrapper {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  .time-view {
+    min-height: 455px;
+    grid-template-rows: 51px 160px 1fr;
   }
 }
 
@@ -513,7 +588,7 @@ p.uniqueid {
   }
 
   .day .price-tag {
-    font-size: 10px;
+    font-size: 8px;
   }
 
   .calendar-main {
@@ -547,7 +622,7 @@ p.uniqueid {
   }
 
   .time-list-container {
-    height: 275px;
+    max-height: 275px;
   }
 }
 
@@ -611,6 +686,7 @@ p.uniqueid {
     width: 100%;
     background: transparent;
     gap: 12px;
+    overflow: auto;
   }
 
   .months-container {
@@ -665,7 +741,7 @@ p.uniqueid {
 
   .day {
     height: auto;
-    min-height: 44px;
+    min-height: 65px;
     padding: 4px 2px;
   }
 
@@ -676,6 +752,7 @@ p.uniqueid {
     width: 100%;
     height: auto;
     display: block;
+    min-height: auto;
   }
 
   .time-header {
@@ -755,6 +832,7 @@ p.uniqueid {
   .time-view {
     position: relative;
     max-width: 100%;
+    min-height: 315px;
   }
 
   .time-controls {
@@ -832,6 +910,21 @@ p.uniqueid {
 
   #month-left {
     border-right: 0;
+  }
+
+  .price-disclaimer {
+    background-color: #fff;
+    padding: 14px 20px;
+    margin-top: 10px;
+    border-radius: 6px;
+    opacity: 1;
+    width: 100%;
+  }
+
+  .time-list-wrapper {
+    padding-left: 20px;
+    padding-right: 20px;
+    top: 49px;
   }
 }
 
@@ -895,6 +988,7 @@ p.uniqueid {
     width: 100%;
     background: transparent;
     gap: 12px;
+    overflow: auto;
   }
 
   .months-container {
@@ -949,7 +1043,7 @@ p.uniqueid {
 
   .day {
     height: auto;
-    min-height: 44px;
+    min-height: 60px;
     padding: 4px 2px;
   }
 
@@ -960,6 +1054,13 @@ p.uniqueid {
     width: 100%;
     height: auto;
     display: block;
+    min-height: auto;
+  }
+
+  .time-list-wrapper {
+    padding-left: 20px;
+    padding-right: 20px;
+    top: 49px;
   }
 
   .time-header {
@@ -1039,6 +1140,7 @@ p.uniqueid {
   .time-view {
     position: relative;
     max-width: 100%;
+    min-height: 310px;
   }
 
   .time-controls {
@@ -1116,6 +1218,14 @@ p.uniqueid {
 
   #month-left {
     border-right: 0;
+  }
+
+  .price-disclaimer {
+    background-color: #fff;
+    padding: 14px 20px;
+    margin-top: 10px;
+    border-radius: 6px;
+    opacity: 1;
   }
 }
 
@@ -1179,6 +1289,12 @@ p.uniqueid {
     width: 100%;
     background: transparent;
     gap: 12px;
+    overflow: auto;
+  }
+
+  .time-list-wrapper {
+    padding-left: 20px;
+    padding-right: 20px;
   }
 
   .months-container {
@@ -1217,7 +1333,7 @@ p.uniqueid {
   }
 
   .day .price-tag {
-    font-size: 12px;
+    font-size: 8px;
   }
 
   .days {
@@ -1244,6 +1360,7 @@ p.uniqueid {
     width: 100%;
     height: auto;
     display: block;
+    min-height: auto;
   }
 
   .time-header {
@@ -1323,6 +1440,7 @@ p.uniqueid {
   .time-view {
     position: relative;
     max-width: 100%;
+    min-height: 305px;
   }
 
   .time-controls {
@@ -1400,6 +1518,14 @@ p.uniqueid {
 
   #month-left {
     border-right: 0;
+  }
+
+  .price-disclaimer {
+    background-color: #fff;
+    padding: 14px 20px;
+    margin-top: 10px;
+    border-radius: 6px;
+    opacity: 1;
   }
 }
 
