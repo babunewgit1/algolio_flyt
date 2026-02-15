@@ -777,3 +777,6 @@ document.addEventListener("DOMContentLoaded", () => {
    generateTimeList();
    generateTimeList();
 });
+
+
+// calender price implementation from api. 
