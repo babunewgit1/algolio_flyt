@@ -478,7 +478,7 @@ document.addEventListener("DOMContentLoaded", () => {
                departure_airport_id: depPortId,
                arrival_airport_id: arrPortId,
                currency_code: "USD"
-           };
+           };        
 
            const res = await fetch(url, {
                method: "POST",
@@ -492,6 +492,19 @@ document.addEventListener("DOMContentLoaded", () => {
            const json = await res.json();
            if (json.status === "success") {
                pricingData = json.response;
+               
+               console.log(pricingData);
+                // Log Peak Days
+                if (pricingData.peak_start_dates && pricingData.peak_end_dates) {
+                    console.log("=== Peak Days ===");
+                    for (let i = 0; i < pricingData.peak_start_dates.length; i++) {
+                        const start = new Date(pricingData.peak_start_dates[i]);
+                        const end = new Date(pricingData.peak_end_dates[i]);
+                        console.log("Peak Range " + (i + 1) + ": " + start.toLocaleDateString() + " to " + end.toLocaleDateString());
+                    }
+                } else {
+                    console.log("No peak days found in pricing data.");
+                }
                // Pricing Validation Rule:
                // If One Way and outbound is 0/empty -> no prices
                // If Round Trip and (outbound is 0 OR return is 0) -> no prices
@@ -532,23 +545,30 @@ document.addEventListener("DOMContentLoaded", () => {
        // Check if date timestamp is within any range
        // Date object timestamp is local? API dates seem to be timestamps (ms).
        // We should normalize 'date' to start of day for cleaner comparison or just use time.
-       const dateTime = date.getTime();
-       // Note: peak_start_dates is array of timestamps
-       
        let isPeak = false;
        if (pricingData.peak_start_dates && pricingData.peak_end_dates) {
+           // Normalize calendar date to local start-of-day timestamp
+           const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+           
            for (let i = 0; i < pricingData.peak_start_dates.length; i++) {
-               const start = pricingData.peak_start_dates[i];
-               const end = pricingData.peak_end_dates[i];
-               // Simple range check
-               if (dateTime >= start && dateTime <= end) {
+               // Convert API UTC timestamps to local start-of-day for fair comparison
+               const startUTC = new Date(pricingData.peak_start_dates[i]);
+               const startLocal = new Date(startUTC.getFullYear(), startUTC.getMonth(), startUTC.getDate()).getTime();
+               
+               const endUTC = new Date(pricingData.peak_end_dates[i]);
+               const endLocal = new Date(endUTC.getFullYear(), endUTC.getMonth(), endUTC.getDate()).getTime();
+               
+               if (dateOnly >= startLocal && dateOnly <= endLocal) {
                    isPeak = true;
                    break;
                }
            }
        }
+
+       
        
        if (isPeak) {
+           console.log("Peak Date Found:", date);
            finalPrice += basePrice * (pricingData.peak_day_pct || 0);
            hasPeakOrPriority = true;
        }

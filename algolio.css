@@ -515,6 +515,13 @@ p.uniqueid {
 ====================================
 */
 
+@media screen and (min-width: 1440px) {
+  .price-disclaimer {
+    position: relative;
+    top: 12px;
+  }
+}
+
 @media screen and (min-width: 1280px) and (max-width: 1440px) {
   .search-results {
     width: 350px;
@@ -548,7 +555,13 @@ p.uniqueid {
     padding-left: 10px;
     padding-right: 10px;
   }
+
+  .price-disclaimer {
+    position: relative;
+    top: 12px;
+  }
 }
+
 @media screen and (min-width: 992px) and (max-width: 1280px) {
   .search-results {
     width: 350px;
@@ -564,9 +577,11 @@ p.uniqueid {
     min-height: 455px;
     grid-template-rows: 51px 160px 1fr;
   }
-}
 
-@media screen and (min-width: 992px) and (max-width: 1280px) {
+  .price-disclaimer {
+    position: relative;
+    top: 6px;
+  }
   .calendar-widget {
     padding: 20px;
   }
