@@ -1608,6 +1608,10 @@ p.uniqueid {
     margin-top: 0px;
     padding: 5px 22px;
   }
+
+  .calendar-widget.active {
+    display: flex;
+  }
 }
 
 /*
