@@ -1614,6 +1614,11 @@ p.uniqueid {
   .calendar-widget.active {
     display: flex;
   }
+
+  .desktop_login,
+  .logout_desktop {
+    display: none !important;
+  }
 }
 
 /*
