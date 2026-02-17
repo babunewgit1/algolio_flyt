@@ -1362,7 +1362,7 @@ p.uniqueid {
     background: transparent;
     gap: 12px;
     overflow: auto;
-    height: 75vh;
+    height: 100%;
   }
 
   .time-list-wrapper {
