@@ -227,6 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
    const timeListRet = document.getElementById("time-list-ret");
    const confirmBtn = document.getElementById("confirm-selection");
    const closeBtn = document.getElementById("close-calendar");
+   const clearBtn = document.getElementById("clear-selection");
 
    // New Time Controls
    const timeSectionRet = document.getElementById("time-section-ret");
@@ -376,8 +377,10 @@ document.addEventListener("DOMContentLoaded", () => {
              oneWayDate.textContent = dStr;
              oneWayDate.classList.remove("one_way_date_placeholder");
              if (oneWayTime) oneWayTime.textContent = tStr;
-          } else if (oneWayTime) {
-              oneWayTime.textContent = "";
+          } else if (oneWayDate) {
+              oneWayDate.textContent = "Date and time";
+              oneWayDate.classList.add("one_way_date_placeholder");
+              if (oneWayTime) oneWayTime.textContent = "";
           }
 
           if (dateField && selectedDateDep) dateField.value = dStr;
@@ -974,6 +977,30 @@ document.addEventListener("DOMContentLoaded", () => {
           }
       }
    });
+
+   if(clearBtn) clearBtn.onclick = (e) => {
+      e.stopPropagation();
+      // Reset dates
+      selectedDateDep = null;
+      selectedDateRet = null;
+      // Reset times to defaults
+      timeDep.h = "12"; timeDep.m = "00"; timeDep.ampm = "AM";
+      timeRet.h = "12"; timeRet.m = "00"; timeRet.ampm = "AM";
+      // Clear stored data on the input element
+      if (currentInput) {
+         delete currentInput.dataset.depDate;
+         delete currentInput.dataset.retDate;
+         delete currentInput.dataset.depTime;
+         delete currentInput.dataset.retTime;
+         delete currentInput.dataset.selectedDate;
+         delete currentInput.dataset.selectedHour;
+         delete currentInput.dataset.selectedMinute;
+         delete currentInput.dataset.selectedAmPm;
+      }
+      updateTimeControls();
+      renderCalendar();
+      updateRealTimeUI();
+   };
 
    if(confirmBtn) confirmBtn.onclick = (e) => {
       e.stopPropagation();

@@ -283,6 +283,35 @@ p.uniqueid {
   line-height: 1.4;
 }
 
+.calendar-bottom-bar {
+  text-align: center;
+  width: 100%;
+  background-color: #fff;
+}
+
+.calendar-bottom-bar button {
+  display: inline-block;
+  border-radius: 4px;
+  font-size: 16px;
+  text-transform: uppercase;
+  font-family:
+    Geom Graphic,
+    Arial,
+    sans-serif;
+  font-weight: 600;
+  color: #04142a;
+  padding: 8px 22px;
+  background-color: transparent;
+  border: 2px solid #04142a;
+  margin-top: 16px;
+  transition: all 0.2s ease;
+}
+
+.calendar-bottom-bar button:hover {
+  background-color: #04142a;
+  color: #fff;
+}
+
 .day.selected span.price-tag {
   color: #fff !important;
 }
@@ -941,6 +970,16 @@ p.uniqueid {
     padding-right: 20px;
     top: 49px;
   }
+
+  .calendar-bottom-bar {
+    padding: 10px 0px;
+    margin-top: -5px;
+  }
+
+  .calendar-bottom-bar button {
+    margin-top: 0px;
+    padding: 5px 22px;
+  }
 }
 
 @media screen and (min-width: 576px) and (max-width: 767px) {
@@ -1242,6 +1281,16 @@ p.uniqueid {
     border-radius: 6px;
     opacity: 1;
   }
+
+  .calendar-bottom-bar {
+    padding: 10px 0px;
+    margin-top: -5px;
+  }
+
+  .calendar-bottom-bar button {
+    margin-top: 0px;
+    padding: 5px 22px;
+  }
 }
 
 @media screen and (max-width: 576px) {
@@ -1541,6 +1590,16 @@ p.uniqueid {
     margin-top: 10px;
     border-radius: 6px;
     opacity: 1;
+  }
+
+  .calendar-bottom-bar {
+    padding: 10px 0px;
+    margin-top: -5px;
+  }
+
+  .calendar-bottom-bar button {
+    margin-top: 0px;
+    padding: 5px 22px;
   }
 }
 
