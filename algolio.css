@@ -957,11 +957,11 @@ p.uniqueid {
 
   .price-disclaimer {
     background-color: #fff;
-    padding: 14px 20px;
-    margin-top: 10px;
-    border-radius: 6px;
+    padding: 10px 20px;
+    margin-top: 0;
+    border-radius: 0px 0px 6px 6px;
     opacity: 1;
-    width: 100%;
+    padding-top: 0;
   }
 
   .time-list-wrapper {
@@ -1279,10 +1279,11 @@ p.uniqueid {
 
   .price-disclaimer {
     background-color: #fff;
-    padding: 14px 20px;
-    margin-top: 10px;
-    border-radius: 6px;
+    padding: 10px 20px;
+    margin-top: 0;
+    border-radius: 0px 0px 6px 6px;
     opacity: 1;
+    padding-top: 0;
   }
 
   .calendar-bottom-bar {
@@ -1593,10 +1594,11 @@ p.uniqueid {
 
   .price-disclaimer {
     background-color: #fff;
-    padding: 14px 20px;
-    margin-top: 10px;
-    border-radius: 6px;
+    padding: 10px 20px;
+    margin-top: 0;
+    border-radius: 0px 0px 6px 6px;
     opacity: 1;
+    padding-top: 0;
   }
 
   .calendar-bottom-bar {
