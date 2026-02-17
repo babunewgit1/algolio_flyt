@@ -642,6 +642,11 @@ document.addEventListener("DOMContentLoaded", () => {
           }
       }
 
+      // Show/hide Clear button based on date selection
+      if (clearBtn) {
+          clearBtn.closest('.calendar-bottom-bar').style.display = selectedDateDep ? 'block' : 'none';
+      }
+
       renderMonth(viewingDate, leftMonthLabel, leftDaysContainer);
 
       const nextMonthDate = new Date(viewingDate);

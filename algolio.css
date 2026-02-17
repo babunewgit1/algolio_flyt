@@ -287,6 +287,7 @@ p.uniqueid {
   text-align: center;
   width: 100%;
   background-color: #fff;
+  display: none;
 }
 
 .calendar-bottom-bar button {
@@ -299,17 +300,15 @@ p.uniqueid {
     Arial,
     sans-serif;
   font-weight: 600;
-  color: #04142a;
+  color: #fff;
   padding: 8px 22px;
-  background-color: transparent;
-  border: 2px solid #04142a;
+  background-color: #04142a;
   margin-top: 16px;
   transition: all 0.2s ease;
 }
 
 .calendar-bottom-bar button:hover {
-  background-color: #04142a;
-  color: #fff;
+  opacity: 0.7;
 }
 
 .day.selected span.price-tag {
