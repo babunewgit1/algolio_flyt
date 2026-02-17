@@ -979,6 +979,10 @@ p.uniqueid {
     margin-top: 0px;
     padding: 5px 22px;
   }
+
+  body.datepicker-open {
+    overflow: hidden;
+  }
 }
 
 @media screen and (min-width: 576px) and (max-width: 767px) {
@@ -1290,6 +1294,10 @@ p.uniqueid {
     margin-top: 0px;
     padding: 5px 22px;
   }
+
+  body.datepicker-open {
+    overflow: hidden;
+  }
 }
 
 @media screen and (max-width: 576px) {
@@ -1335,8 +1343,8 @@ p.uniqueid {
     padding: 10px;
   }
 
-  .calendar-widget.active {
-    display: flex;
+  body.datepicker-open {
+    overflow: hidden;
   }
 
   @keyframes fadeIn {

@@ -883,6 +883,7 @@ document.addEventListener("DOMContentLoaded", () => {
              widget.classList.remove("active");
              void widget.offsetWidth;
              widget.classList.add("active");
+             document.body.classList.add("datepicker-open");
              
              // FETCH PRICING DATA HERE
              fetchPricingData();
@@ -955,6 +956,7 @@ document.addEventListener("DOMContentLoaded", () => {
        if(timeListDep) timeListDep.classList.remove("show");
        if(timeListRet) timeListRet.classList.remove("show");
        inputs.forEach((i) => i.classList.remove("active-input"));
+       document.body.classList.remove("datepicker-open");
    };
 
    if(closeBtn) closeBtn.onclick = (e) => {
