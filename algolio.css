@@ -731,6 +731,7 @@ p.uniqueid {
     gap: 12px;
     overflow: auto;
     height: 500px;
+    border-radius: 0px 0px 6px 6px;
   }
 
   .months-container {
@@ -964,6 +965,8 @@ p.uniqueid {
     opacity: 1;
     padding-top: 0;
     width: 100%;
+    padding-top: 10px;
+    margin-top: -6px;
   }
 
   .time-list-wrapper {
@@ -975,6 +978,7 @@ p.uniqueid {
   .calendar-bottom-bar {
     padding: 10px 0px;
     margin-top: -5px;
+    padding-bottom: 5px;
   }
 
   .calendar-bottom-bar button {
@@ -1049,6 +1053,7 @@ p.uniqueid {
     gap: 12px;
     overflow: auto;
     height: 500px;
+    border-radius: 0px 0px 6px 6px;
   }
 
   .months-container {
@@ -1287,11 +1292,14 @@ p.uniqueid {
     border-radius: 0px 0px 6px 6px;
     opacity: 1;
     padding-top: 0;
+    padding-top: 10px;
+    margin-top: -6px;
   }
 
   .calendar-bottom-bar {
     padding: 10px 0px;
     margin-top: -5px;
+    padding-bottom: 5px;
   }
 
   .calendar-bottom-bar button {
@@ -1366,6 +1374,7 @@ p.uniqueid {
     gap: 12px;
     overflow: auto;
     height: 500px;
+    border-radius: 0px 0px 6px 6px;
   }
 
   .time-list-wrapper {
@@ -1603,11 +1612,14 @@ p.uniqueid {
     border-radius: 0px 0px 6px 6px;
     opacity: 1;
     padding-top: 0;
+    padding-top: 10px;
+    margin-top: -6px;
   }
 
   .calendar-bottom-bar {
     padding: 10px 0px;
     margin-top: -5px;
+    padding-bottom: 5px;
   }
 
   .calendar-bottom-bar button {
