@@ -1056,3 +1056,248 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // calender price implementation from api. 
+
+// ============================================================
+// >>>>>>>>  SESSION STORAGE – SAVE FORM DATA ON SUBMIT  <<<<<<<<
+// Mirrors the logic from homeform.js so that form data is
+// persisted in sessionStorage before navigating to /aircraft.
+// ============================================================
+
+// Helper: convert 12-hour time string ("12:00 AM") to 24-hour format ("00:00:00")
+function to24HourTime(timeStr) {
+   const [time, modifier] = timeStr.split(" ");
+   let [hours, minutes] = time.split(":");
+   if (modifier === "PM" && hours !== "12") hours = String(Number(hours) + 12);
+   if (modifier === "AM" && hours === "12") hours = "00";
+   return `${hours.padStart(2, "0")}:${minutes}:00`;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+
+   // ---------- ONE WAY SUBMIT ----------
+   const oneWayForm = document.querySelector(".one_way_search");
+   if (oneWayForm) {
+      const oneWaySubmitBtn = oneWayForm.querySelector(".trip_submit button");
+      if (oneWaySubmitBtn) {
+         oneWaySubmitBtn.addEventListener("click", function () {
+            // Grab departure & arrival blocks by their dedicated class
+            const fromBlock = oneWayForm.querySelector(".departure_block");
+            const toBlock   = oneWayForm.querySelector(".arrival_block");
+
+            const formIdInput = fromBlock.querySelector(".airportcity").textContent;
+            const toIdInput = toBlock.querySelector(".airportcity").textContent;     
+            const fromId = fromBlock.querySelector(".portid").textContent;        
+            const toId = toBlock.querySelector(".portid").textContent;          
+            const fromShortCode = fromBlock.querySelector(".airportshort").textContent;  
+            const toShortCode = toBlock.querySelector(".airportshort").textContent;
+
+            // Date & time come from the calendar widget's dataset (ISO format)
+            const dateInput = oneWayForm.querySelector(".form_input_multipul");
+            let dateAsText = "";
+            let timeAsText = "12:00 AM";
+
+            if (dateInput) {
+               // Read date from dataset (stored as ISO string by calendar widget)
+               const isoDate = dateInput.dataset.selectedDate || dateInput.dataset.depDate || "";
+               if (isoDate) {
+                  const d = new Date(isoDate);
+                  const yyyy = d.getFullYear();
+                  const mm = String(d.getMonth() + 1).padStart(2, "0");
+                  const dd = String(d.getDate()).padStart(2, "0");
+                  dateAsText = `${yyyy}-${mm}-${dd}`;
+               }
+
+               // Read time from dataset
+               if (dateInput.dataset.depTime) {
+                  try {
+                     const t = JSON.parse(dateInput.dataset.depTime);
+                     timeAsText = `${t.h}:${t.m} ${t.ampm}`;
+                  } catch (e) {}
+               } else if (dateInput.dataset.selectedHour) {
+                  const h = dateInput.dataset.selectedHour;
+                  const m = dateInput.dataset.selectedMinute || "00";
+                  const ap = dateInput.dataset.selectedAmPm || "AM";
+                  timeAsText = `${h}:${m} ${ap}`;
+               }
+            }
+
+            // PAX
+            const paxInput = oneWayForm.querySelector(".form_input_pax_input input");
+            const pax = paxInput ? paxInput.value : "1";
+            const appDate = dateAsText;
+
+            // Build timestamp
+            const isoTime = to24HourTime(timeAsText);
+            const combinedDateTime = `${dateAsText}T${isoTime}`;
+            const dateObject = new Date(combinedDateTime);
+            const timeStamp = Math.floor(dateObject.getTime() / 1000);
+
+            // Validate
+            if (
+               fromId &&
+               toId &&
+               dateAsText &&
+               pax &&
+               formIdInput &&
+               toIdInput &&
+               fromShortCode &&
+               toShortCode
+            ) {
+               const storeData = {
+                  way: "one way",
+                  fromId,
+                  toId,
+                  dateAsText,
+                  timeAsText,
+                  pax,
+                  appDate,
+                  timeStamp,
+                  formIdInput,
+                  toIdInput,
+                  fromShortCode,
+                  toShortCode,
+               };
+
+               sessionStorage.setItem("storeData", JSON.stringify(storeData));
+               window.location.href = `/aircraft`;
+            } else {
+               alert("Please fill up the form properly");
+            }
+         });
+      }
+   }
+
+   // ---------- ROUND TRIP SUBMIT ----------
+   const roundTripForm = document.querySelector(".round_trip_search");
+   if (roundTripForm) {
+      const roundTripSubmitBtn = roundTripForm.querySelector(".trip_submit button");
+      if (roundTripSubmitBtn) {
+         roundTripSubmitBtn.addEventListener("click", function () {
+            const fromBlock = roundTripForm.querySelector(".departure_block");
+            const toBlock = roundTripForm.querySelector(".arrival_block");
+
+            const formIdInput = fromBlock.querySelector(".airportcity").textContent;
+            const toIdInput = toBlock.querySelector(".airportcity").textContent;
+
+            // Return leg swaps from ↔ to
+            const fromInputReturn = toBlock.querySelector(".airportcity").textContent;
+            const toInputReturn = fromBlock.querySelector(".airportcity").textContent;
+
+            const fromId = fromBlock.querySelector(".portid").textContent;
+            const toId = toBlock.querySelector(".portid").textContent;
+            const returnFromId = toBlock.querySelector(".portid").textContent;
+            const returnToId = fromBlock.querySelector(".portid").textContent;
+
+            const fromShortCode = fromBlock.querySelector(".airportshort").textContent;
+            const toShortCode = toBlock.querySelector(".airportshort").textContent;
+
+            // Dates & times from the calendar widget's dataset (ISO format)
+            const dateInput = roundTripForm.querySelector(".form_input_multipul");
+            let dateAsText = "";
+            let returnDateAsText = "";
+            let timeAsText = "12:00 AM";
+            let timeAsTextReturn = "12:00 AM";
+
+            if (dateInput) {
+               // Departure date from dataset
+               const isoDepDate = dateInput.dataset.depDate || "";
+               if (isoDepDate) {
+                  const d = new Date(isoDepDate);
+                  const yyyy = d.getFullYear();
+                  const mm = String(d.getMonth() + 1).padStart(2, "0");
+                  const dd = String(d.getDate()).padStart(2, "0");
+                  dateAsText = `${yyyy}-${mm}-${dd}`;
+               }
+
+               // Return date from dataset
+               const isoRetDate = dateInput.dataset.retDate || "";
+               if (isoRetDate) {
+                  const d = new Date(isoRetDate);
+                  const yyyy = d.getFullYear();
+                  const mm = String(d.getMonth() + 1).padStart(2, "0");
+                  const dd = String(d.getDate()).padStart(2, "0");
+                  returnDateAsText = `${yyyy}-${mm}-${dd}`;
+               }
+
+               // Departure time from dataset
+               if (dateInput.dataset.depTime) {
+                  try {
+                     const t = JSON.parse(dateInput.dataset.depTime);
+                     timeAsText = `${t.h}:${t.m} ${t.ampm}`;
+                  } catch (e) {}
+               }
+
+               // Return time from dataset
+               if (dateInput.dataset.retTime) {
+                  try {
+                     const t = JSON.parse(dateInput.dataset.retTime);
+                     timeAsTextReturn = `${t.h}:${t.m} ${t.ampm}`;
+                  } catch (e) {}
+               }
+            }
+
+            // PAX
+            const paxInput = roundTripForm.querySelector(".form_input_pax_input input");
+            const pax = paxInput ? paxInput.value : "1";
+            const paxReturn = pax;
+
+            const appDate = dateAsText;
+            const appDateReturn = returnDateAsText;
+
+            // Build departure timestamp
+            const isoTime = to24HourTime(timeAsText);
+            const combinedDateTime = `${dateAsText}T${isoTime}`;
+            const dateObject = new Date(combinedDateTime);
+            const timeStamp = Math.floor(dateObject.getTime() / 1000);
+
+            // Build return timestamp
+            const isoTimeReturn = to24HourTime(timeAsTextReturn);
+            const combinedDateTimeReturn = `${returnDateAsText}T${isoTimeReturn}`;
+            const dateObjectReturn = new Date(combinedDateTimeReturn);
+            const timeStampReturn = Math.floor(dateObjectReturn.getTime() / 1000);
+
+            // Validate
+            if (
+               formIdInput &&
+               toIdInput &&
+               dateAsText &&
+               returnDateAsText &&
+               pax &&
+               fromId &&
+               toId &&
+               fromShortCode &&
+               toShortCode
+            ) {
+               const storeData = {
+                  way: "round trip",
+                  formIdInput,
+                  toIdInput,
+                  fromInputReturn,
+                  toInputReturn,
+                  fromId,
+                  toId,
+                  returnFromId,
+                  returnToId,
+                  dateAsText,
+                  returnDateAsText,
+                  timeAsText,
+                  timeAsTextReturn,
+                  pax,
+                  paxReturn,
+                  appDate,
+                  appDateReturn,
+                  timeStamp,
+                  timeStampReturn,
+                  fromShortCode,
+                  toShortCode,
+               };
+               sessionStorage.setItem("storeData", JSON.stringify(storeData));
+               window.location.href = `/aircraft`;
+            } else {
+               alert("Please fill up the form properly");
+            }
+         });
+      }
+   }
+
+});

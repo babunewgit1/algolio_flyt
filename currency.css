@@ -1,0 +1,24 @@
+.currency_menu.currency_open .currency_mg_menu {
+  transform: scale3d(1, 1, 1);
+  display: block;
+}
+
+.currency_menu.currency_open {
+  background-color: #545f6e;
+  border-radius: 5px;
+}
+
+.currency_menu.currency_open img.nav_bar_link_arrow {
+  transform: rotate(180deg);
+}
+
+@media screen and (max-width: 992px) {
+  .mb_nav_open_link {
+    overflow: auto !important;
+  }
+
+  .currency_menu.currency_open {
+    background: none;
+    border-radius: 0px;
+  }
+}
