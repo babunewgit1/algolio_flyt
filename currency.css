@@ -12,6 +12,11 @@
   transform: rotate(180deg);
 }
 
+.clist_item.active .clist_oval {
+  border-width: 5px;
+  border-color: #364355;
+}
+
 @media screen and (max-width: 992px) {
   .mb_nav_open_link {
     overflow: auto !important;
@@ -20,5 +25,9 @@
   .currency_menu.currency_open {
     background: none;
     border-radius: 0px;
+  }
+
+  body.currency_menu_open {
+    overflow: hidden;
   }
 }

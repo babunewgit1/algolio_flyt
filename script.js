@@ -480,7 +480,7 @@ document.addEventListener("DOMContentLoaded", () => {
            const bodyData = {
                departure_airport_id: depPortId,
                arrival_airport_id: arrPortId,
-               currency_code: "USD"
+               currency_code: JSON.parse(sessionStorage.getItem("currency"))?.api_currency || "USD"
            };        
 
            const res = await fetch(url, {
